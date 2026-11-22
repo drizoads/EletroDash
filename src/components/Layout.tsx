@@ -7,8 +7,8 @@ import {
   CircleDollarSign,
   FileText,
   Home,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   LogOut,
   Menu,
   Moon,
@@ -284,13 +284,37 @@ export function Layout() {
     <div className="bg-app min-h-screen">
       <aside
         className={cx(
-          "bg-surface border-line fixed inset-y-0 left-0 hidden w-64 border-r transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:block",
+          "bg-surface border-line fixed inset-y-0 left-0 z-40 hidden w-64 border-r transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:block",
           hidden && "-translate-x-full",
         )}
         aria-hidden={hidden}
       >
         <Sidebar workspace={workspace} />
+        {/* Setinha discreta na borda do menu para ocultá-lo. */}
+        <button
+          onClick={toggleSidebar}
+          tabIndex={hidden ? -1 : 0}
+          className="bg-surface border-line text-faint hover:text-main hover:border-accent/40 absolute top-[29px] -right-3 grid size-6 place-items-center rounded-full border shadow-sm transition-colors"
+          aria-label="Ocultar menu lateral"
+          title="Ocultar menu (Ctrl+B)"
+        >
+          <ChevronLeft className="size-3.5" strokeWidth={2} />
+        </button>
       </aside>
+
+      {/* Com o menu oculto: aba fina na lateral para trazê-lo de volta. */}
+      <button
+        onClick={toggleSidebar}
+        className={cx(
+          "bg-surface border-line text-faint hover:text-main hover:border-accent/40 fixed top-1/2 left-0 z-30 hidden h-14 w-4 -translate-y-1/2 place-items-center rounded-r-lg border border-l-0 transition-all duration-300 lg:grid",
+          hidden ? "opacity-100" : "pointer-events-none -translate-x-full opacity-0",
+        )}
+        aria-label="Mostrar menu lateral"
+        title="Mostrar menu (Ctrl+B)"
+        tabIndex={hidden ? 0 : -1}
+      >
+        <ChevronRight className="size-3" strokeWidth={2.2} />
+      </button>
 
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -319,18 +343,6 @@ export function Layout() {
       >
         <header className="bg-app/80 sticky top-0 z-30 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
           <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:h-16 sm:px-8">
-            <button
-              onClick={toggleSidebar}
-              className="text-muted hover:text-main hover:bg-surface -ml-2 hidden size-9 place-items-center rounded-full transition-colors lg:grid"
-              aria-label={hidden ? "Mostrar menu lateral" : "Ocultar menu lateral"}
-              title={`${hidden ? "Mostrar" : "Ocultar"} menu (Ctrl+B)`}
-            >
-              {hidden ? (
-                <PanelLeftOpen className="size-[18px]" strokeWidth={1.6} />
-              ) : (
-                <PanelLeftClose className="size-[18px]" strokeWidth={1.6} />
-              )}
-            </button>
             <Link to="/" className={hidden ? "" : "lg:hidden"}>
               <Wordmark className="text-[18px]" />
             </Link>
