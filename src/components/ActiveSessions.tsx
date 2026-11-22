@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { BatteryMedium, Loader2, Square } from "lucide-react";
 import { api, type ChargingSession } from "../api";
 import { duration, kw, kwh, minutesBetween, money } from "../lib/format";
-import { Button, Empty } from "./ui";
+import { Button, Empty, confirmDialog } from "./ui";
 
 /** Lista de recargas em andamento com botão de parar. */
 export function ActiveSessionsList({
@@ -18,10 +18,19 @@ export function ActiveSessionsList({
   const [stopping, setStopping] = useState<string | null>(null);
 
   async function stop(s: ChargingSession) {
-    const ok = window.confirm(
-      `Parar a recarga em ${s.chargerName} (conector ${s.connectorNumber})?\n` +
-        "O motorista recebe de volta o crédito não usado.",
-    );
+    const ok = await confirmDialog({
+      title: "Parar esta recarga?",
+      message: (
+        <>
+          <b className="text-main font-medium">
+            {s.chargerName} · conector {s.connectorNumber}
+          </b>
+          <br />O motorista recebe de volta o crédito que não usou.
+        </>
+      ),
+      confirmLabel: "Parar recarga",
+      danger: true,
+    });
     if (!ok) return;
     setStopping(s.id);
     try {

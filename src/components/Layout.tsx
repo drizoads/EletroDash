@@ -22,7 +22,7 @@ import { api } from "../api";
 import { useApi } from "../hooks/useApi";
 import { NotificationsMenu, UserMenu } from "./HeaderMenus";
 import { QuickSearch } from "./QuickSearch";
-import { Toaster, cx } from "./ui";
+import { ConfirmHost, Toaster, cx } from "./ui";
 
 interface NavItem {
   to: string;
@@ -353,6 +353,7 @@ export function Layout() {
       <TabBar onMore={() => setOpen(true)} />
       <QuickSearch open={searching} onClose={() => setSearching(false)} />
       <Toaster />
+      <ConfirmHost />
     </div>
   );
 }

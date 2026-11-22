@@ -39,6 +39,7 @@ import {
   Td,
   Th,
   Toggle,
+  confirmDialog,
   cx,
   stagger,
   toast,
@@ -257,7 +258,13 @@ function TeamTab({ account, onChange }: { account: Account; onChange: () => void
   }
 
   async function remove(email: string, name: string) {
-    if (!window.confirm(`Remover ${name} da equipe? A pessoa perde o acesso ao painel.`)) return;
+    const ok = await confirmDialog({
+      title: `Remover ${name}?`,
+      message: "A pessoa perde o acesso ao painel na hora.",
+      confirmLabel: "Remover",
+      danger: true,
+    });
+    if (!ok) return;
     await api.removeUser(email);
     toast(`${name} removido da equipe`);
     onChange();
@@ -596,8 +603,13 @@ function AppearanceTab() {
   ];
 
   async function reset() {
-    if (!window.confirm("Apagar as alterações feitas no protótipo e voltar aos dados de exemplo?"))
-      return;
+    const ok = await confirmDialog({
+      title: "Restaurar os dados de exemplo?",
+      message: "O que você cadastrou ou editou no protótipo será apagado.",
+      confirmLabel: "Restaurar",
+      danger: true,
+    });
+    if (!ok) return;
     await api.resetDemo?.();
     window.location.reload();
   }

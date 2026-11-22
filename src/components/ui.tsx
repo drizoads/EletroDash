@@ -630,13 +630,13 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
       <div className="fade-in absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         className={cx(
-          "pop-in bg-surface border-line relative flex max-h-[92vh] w-full flex-col rounded-t-3xl border shadow-2xl sm:rounded-3xl",
+          "pop-in bg-surface border-line relative flex max-h-[86dvh] w-full flex-col rounded-3xl border shadow-2xl sm:max-h-[90vh]",
           wide ? "sm:max-w-2xl" : "sm:max-w-lg",
         )}
       >
@@ -655,7 +655,7 @@ export function Modal({
         </header>
         <div className="overflow-y-auto px-5 pb-6 sm:px-6">{children}</div>
         {footer && (
-          <footer className="border-line flex justify-end gap-2 border-t px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+          <footer className="border-line flex justify-end gap-2 border-t px-5 py-4 sm:px-6">
             {footer}
           </footer>
         )}
@@ -828,6 +828,122 @@ export function ConnectorLine({
         #{number} {type}
       </span>
       <ConnectorBadge status={status} small />
+    </div>
+  );
+}
+
+/* ---------- Confirmação (no lugar do aviso do navegador) ---------- */
+
+interface ConfirmOptions {
+  title: string;
+  message?: ReactNode;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  danger?: boolean;
+}
+
+let openConfirm: ((o: ConfirmOptions, done: (ok: boolean) => void) => void) | null = null;
+
+/** Pergunta com uma janela do próprio painel. Responde true se a pessoa confirmar. */
+export function confirmDialog(o: ConfirmOptions): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!openConfirm) return resolve(window.confirm(o.title));
+    openConfirm(o, resolve);
+  });
+}
+
+export function ConfirmHost() {
+  const [state, setState] = useState<{ o: ConfirmOptions; done: (ok: boolean) => void } | null>(
+    null,
+  );
+  useEffect(() => {
+    openConfirm = (o, done) => setState({ o, done });
+    return () => {
+      openConfirm = null;
+    };
+  }, []);
+  useEffect(() => {
+    if (!state) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close(false);
+      if (e.key === "Enter") close(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+  if (!state) return null;
+  const { o } = state;
+  function close(ok: boolean) {
+    state?.done(ok);
+    setState(null);
+  }
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
+      <div
+        className="fade-in absolute inset-0 bg-black/55 backdrop-blur-sm"
+        onClick={() => close(false)}
+      />
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        className="pop-in bg-surface border-line relative w-full max-w-sm rounded-3xl border p-6 text-center shadow-2xl"
+      >
+        <div
+          className={cx(
+            "mx-auto mb-4 grid size-12 place-items-center rounded-full",
+            o.danger ? "bg-bad/12 text-bad" : "bg-accent/12 text-accent",
+          )}
+        >
+          {o.danger ? (
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8h.01M11 12h1v4h1" />
+            </svg>
+          )}
+        </div>
+        <h2 className="text-main text-[17px] font-semibold tracking-[-0.01em]">{o.title}</h2>
+        {o.message && <div className="text-muted mt-2 text-sm leading-relaxed">{o.message}</div>}
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => close(false)}
+            className="border-line text-main hover:bg-surface-2 h-11 rounded-xl border text-sm font-medium transition-colors"
+          >
+            {o.cancelLabel ?? "Cancelar"}
+          </button>
+          <button
+            autoFocus
+            onClick={() => close(true)}
+            className={cx(
+              "h-11 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90",
+              o.danger ? "bg-bad text-white" : "bg-accent text-white dark:text-black",
+            )}
+          >
+            {o.confirmLabel ?? "Confirmar"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

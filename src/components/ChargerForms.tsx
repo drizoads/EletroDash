@@ -17,14 +17,14 @@ const TYPES: ConnectorType[] = ["CCS2", "Tipo 2", "CHAdeMO"];
 
 function Steps({ step, labels }: { step: number; labels: string[] }) {
   return (
-    <ol className="mb-6 flex items-center gap-2">
+    <ol className="mb-6 flex items-center gap-2 px-0.5 py-0.5">
       {labels.map((l, i) => (
         <li key={l} className="flex flex-1 items-center gap-2">
           <span
             className={cx(
               "grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold transition-colors duration-300",
               i < step && "bg-accent text-surface",
-              i === step && "ring-accent text-accent ring-2",
+              i === step && "border-accent text-accent border-2",
               i > step && "bg-surface-2 text-faint",
             )}
           >
