@@ -110,7 +110,7 @@ export function Sessions() {
           </Select>
           <label className="flex min-w-48 flex-1 flex-col gap-1">
             <span className="text-faint text-xs font-medium">Buscar</span>
-            <div className="bg-surface border-line focus-within:ring-brand-500/40 flex h-9 items-center gap-2 rounded-lg border px-2.5 focus-within:ring-2">
+            <div className="bg-surface border-line focus-within:ring-accent/40 flex h-9 items-center gap-2 rounded-lg border px-2.5 focus-within:ring-2">
               <Search className="text-faint size-4" />
               <input
                 value={search}

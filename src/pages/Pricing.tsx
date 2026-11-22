@@ -12,8 +12,8 @@ export function Pricing() {
         title="Preços e regras"
         subtitle="Preço por kWh, ociosidade e créditos oferecidos no WhatsApp."
       />
-      <div className="mb-4 flex gap-3 rounded-2xl border border-sky-500/25 bg-sky-500/8 p-4 text-sm">
-        <Info className="mt-0.5 size-4 shrink-0 text-sky-500" />
+      <div className="mb-4 flex gap-3 rounded-2xl border border-info/25 bg-info/8 p-4 text-sm">
+        <Info className="mt-0.5 size-4 shrink-0 text-info" />
         <p className="text-muted">
           O preço vale o do <b className="text-main">momento do pagamento</b>. Se você mudar o preço
           com uma recarga em andamento, ela continua com o valor antigo. Cada mudança cria uma nova

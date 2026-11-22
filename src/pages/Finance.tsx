@@ -2,7 +2,17 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { api } from "../api";
 import { EvolutionChart } from "../components/charts";
-import { Card, Loading, PageHeader, Segmented, StatCard, Table, Td, Th } from "../components/ui";
+import {
+  Card,
+  Loading,
+  PageHeader,
+  Segmented,
+  StatCard,
+  Table,
+  Td,
+  Th,
+  stagger,
+} from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { delta, int, kwh, money } from "../lib/format";
 import { PRESET_LABEL, periodFor, type PeriodPreset } from "../lib/period";
@@ -14,7 +24,7 @@ export function Finance() {
   const period = useMemo(() => periodFor(preset), [preset]);
   const summary = useApi(() => api.getSummary(period), [period]);
   const account = useApi(() => api.getAccount(), []);
-  const s = summary.data;
+  const s = summary.loading ? undefined : summary.data;
   const pix = s?.daily.reduce((a, d) => a + d.pixCents, 0) ?? 0;
   const card = s?.daily.reduce((a, d) => a + d.cardCents, 0) ?? 0;
   const plan = account.data?.plan;
@@ -34,44 +44,51 @@ export function Finance() {
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          featured
+          style={stagger(1)}
           label="Vendas brutas"
-          value={s ? money(s.grossCents) : "—"}
-          delta={s ? delta(s.grossCents, s.previous.grossCents) : undefined}
+          value={s?.grossCents}
+          format={money}
+          spark={s?.daily.map((d) => d.grossCents)}
+          delta={s && delta(s.grossCents, s.previous.grossCents)}
           hint={s && `Pix ${money(pix)} · Cartão ${money(card)}`}
         />
         <StatCard
+          style={stagger(2)}
           label="Taxas EletroPay"
-          value={s ? money(s.feesCents) : "—"}
+          value={s?.feesCents}
+          format={money}
           hint={
             plan &&
             `Plano ${plan.name}: ${(plan.pixFeeBps / 100).toLocaleString("pt-BR")}% por recarga`
           }
         />
         <StatCard
+          style={stagger(3)}
           label="Líquido"
-          value={s ? money(s.netCents) : "—"}
-          delta={s ? delta(s.netCents, s.previous.netCents) : undefined}
+          value={s?.netCents}
+          format={money}
+          delta={s && delta(s.netCents, s.previous.netCents)}
           hint="Vendas menos taxas"
         />
         <StatCard
+          style={stagger(4)}
           label="Estornos"
-          value={s ? money(s.refundsCents) : "—"}
+          value={s?.refundsCents}
+          format={money}
           hint="Recargas devolvidas por inteiro"
         />
       </div>
 
-      <Card className="mt-4" title="Vendas por dia">
-        {s ? <EvolutionChart data={s.daily} bucket={s.bucket} series="gross" /> : <Loading />}
+      <Card className="mt-4" title="Vendas por dia" style={stagger(5)}>
+        {s ? <EvolutionChart data={s.daily} bucket={s.bucket} series="gross" /> : <Loading chart />}
       </Card>
 
       <Card
         className="mt-4"
         title="Tabela por dia"
         action={
-          <Link
-            to="/financeiro/conciliacoes"
-            className="text-brand-600 dark:text-brand-400 text-xs font-medium"
-          >
+          <Link to="/financeiro/conciliacoes" className="text-accent text-xs font-medium">
             Ver extrato completo
           </Link>
         }

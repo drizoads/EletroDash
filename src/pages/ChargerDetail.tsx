@@ -88,10 +88,7 @@ export function ChargerDetail() {
               <div className="text-main text-2xl font-semibold tabular">
                 {pricePerKwh(c.priceKwhCents)}
               </div>
-              <Link
-                to="/precos"
-                className="text-brand-600 dark:text-brand-400 mt-1 inline-block text-xs font-medium"
-              >
+              <Link to="/precos" className="text-accent mt-1 inline-block text-xs font-medium">
                 Editar em Preços e regras
               </Link>
             </Card>

@@ -75,15 +75,11 @@ export function Ledger() {
             <div className="mt-4 grid grid-cols-3 gap-4 tabular">
               <div>
                 <div className="text-faint text-xs">Entradas</div>
-                <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {money(s.inCents)}
-                </div>
+                <div className="font-semibold text-ok">{money(s.inCents)}</div>
               </div>
               <div>
                 <div className="text-faint text-xs">Saídas</div>
-                <div className="font-semibold text-rose-600 dark:text-rose-400">
-                  {money(-s.outCents)}
-                </div>
+                <div className="font-semibold text-bad">{money(-s.outCents)}</div>
               </div>
               <div>
                 <div className="text-faint text-xs">Saldo</div>
@@ -166,12 +162,7 @@ export function Ledger() {
                     </Td>
                     <Td
                       right
-                      className={cx(
-                        "font-medium",
-                        e.amountCents >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-rose-600 dark:text-rose-400",
-                      )}
+                      className={cx("font-medium", e.amountCents >= 0 ? "text-ok" : "text-bad")}
                     >
                       {e.amountCents >= 0 ? "+ " : "− "}
                       {money(Math.abs(e.amountCents))}

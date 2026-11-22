@@ -220,12 +220,20 @@ function buildHistory(): ChargingSession[] {
     const weekday = new Date(dayStart).getDay();
     const base = weekday === 0 || weekday === 6 ? 7 : 10;
     const growth = 1 + (75 - d) / 150; // operação crescendo ao longo do tempo
-    const count = Math.round(base * growth * between(0.7, 1.3));
+    // Hoje: recargas espalhadas só pelo tempo já decorrido, com um mínimo
+    // garantido para o painel nunca abrir vazio (é demonstração).
+    const isToday = d === 0;
+    const elapsed = GENERATED_AT - dayStart;
+    const count = isToday
+      ? Math.max(14, Math.round(base * growth * (elapsed / DAY) * 1.3))
+      : Math.round(base * growth * between(0.7, 1.3));
     for (let k = 0; k < count; k++) {
       const ci = int(0, chargers.length - 1);
       const charger = chargers[ci] as Charger;
       const connector = pick(charger.connectors);
-      const startMs = dayStart + pickHour() * HOUR + int(0, 59) * MINUTE;
+      const startMs = isToday
+        ? dayStart + rand() * Math.max(elapsed - 12 * MINUTE, 5 * MINUTE)
+        : dayStart + pickHour() * HOUR + int(0, 59) * MINUTE;
       const kw = Math.min(connector.maxKw, between(0.55, 0.95) * connector.maxKw);
       const credit = pick(CREDIT_OPTIONS_CENTS);
       const method: PaymentMethod =
@@ -245,11 +253,18 @@ function buildHistory(): ChargingSession[] {
       const price = charger.priceKwhCents;
       const maxWh = method === "pix" || method === "card" ? (credit / price) * 1000 : 60_000;
       const wantedWh = between(6_000, 48_000);
-      const energyWh =
+      let energyWh =
         status === "failed" || status === "cancelled" ? 0 : Math.round(Math.min(maxWh, wantedWh));
-      const minutes = Math.max(4, Math.round((energyWh / 1000 / kw) * 60));
+      let minutes = Math.max(4, Math.round((energyWh / 1000 / kw) * 60));
+      const latestEnd = GENERATED_AT - 2 * MINUTE;
+      if (isToday && startMs + minutes * MINUTE > latestEnd) {
+        // Recarga de hoje mais curta, para já ter terminado.
+        minutes = Math.floor((latestEnd - startMs) / MINUTE);
+        if (minutes < 4) continue;
+        if (energyWh > 0) energyWh = Math.round((kw * minutes * 1000) / 60);
+      }
       const endMs = startMs + minutes * MINUTE;
-      if (endMs > GENERATED_AT - 10 * MINUTE) continue;
+      if (endMs > latestEnd) continue;
 
       const idleMinutes = status === "completed" && rand() < 0.15 ? int(3, 40) : 0;
       const idleCents = Math.max(0, idleMinutes - 10) * 50;
@@ -342,7 +357,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: CREDIT_OPTIONS_CENTS,
     version: 2,
     validFrom: iso(GENERATED_AT - 30 * DAY),
-    createdBy: "Dono do posto",
+    createdBy: "Arthur",
   },
   {
     id: "tar_dc40",
@@ -355,7 +370,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: CREDIT_OPTIONS_CENTS,
     version: 2,
     validFrom: iso(GENERATED_AT - 30 * DAY),
-    createdBy: "Dono do posto",
+    createdBy: "Arthur",
   },
   {
     id: "tar_ac",
@@ -368,7 +383,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: CREDIT_OPTIONS_CENTS,
     version: 1,
     validFrom: iso(GENERATED_AT - 75 * DAY),
-    createdBy: "Dono do posto",
+    createdBy: "Arthur",
   },
   {
     id: "tar_cond",
@@ -381,7 +396,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: [],
     version: 1,
     validFrom: iso(GENERATED_AT - 75 * DAY),
-    createdBy: "Dono do posto",
+    createdBy: "Arthur",
   },
 ];
 
@@ -498,15 +513,21 @@ function buildLedger(): LedgerEntry[] {
 export const ledger = buildLedger();
 
 export const account: Account = {
-  operatorName: "Eletroposto Exemplo",
-  legalName: "Eletroposto Exemplo Ltda.",
+  operatorName: "Inova Solar",
+  legalName: "Inova Solar Energia Ltda.",
   cnpjMasked: "12.345.•••/0001-••",
   asaasStatus: "approved",
   pixKeyMasked: "CNPJ ••.•••.678/0001-90",
   plan: PLAN,
+  owner: { name: "Arthur", role: "Dono · Inova Solar" },
   users: [
-    { name: "Dono do posto", email: "dono@exemplo.com.br", role: "Dono", active: true },
-    { name: "Financeiro", email: "financeiro@exemplo.com.br", role: "Financeiro", active: true },
-    { name: "Atendimento", email: "suporte@exemplo.com.br", role: "Suporte", active: false },
+    { name: "Arthur", email: "arthur@inovasolar.exemplo", role: "Dono", active: true },
+    {
+      name: "Financeiro",
+      email: "financeiro@inovasolar.exemplo",
+      role: "Financeiro",
+      active: true,
+    },
+    { name: "Atendimento", email: "suporte@inovasolar.exemplo", role: "Suporte", active: false },
   ],
 };

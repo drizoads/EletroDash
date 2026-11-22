@@ -43,7 +43,7 @@ export function ActiveSessionsList({
           <li key={s.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="live-dot size-2 rounded-full bg-sky-500" />
+                <span className="live-dot size-2 rounded-full bg-info" />
                 <Link
                   to={`/recargas/${s.id}`}
                   className="text-main truncate text-sm font-medium hover:underline"
@@ -55,7 +55,7 @@ export function ActiveSessionsList({
               <div className="mt-2 flex items-center gap-3">
                 <div className="bg-surface-2 h-1.5 flex-1 overflow-hidden rounded-full">
                   <div
-                    className="bg-brand-500 h-full rounded-full transition-all"
+                    className="bg-accent h-full rounded-full transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

@@ -14,8 +14,8 @@ import type { Charger, ConnectorStatus, DailyPoint } from "../api";
 import { int, kwh, money } from "../lib/format";
 import { CONNECTOR_STATUS, TONE_HEX, cx } from "./ui";
 
-const AXIS = { fill: "#8a96a3", fontSize: 11 };
-const GRID = "rgba(127,140,155,0.16)";
+const AXIS = { fill: "var(--faint)", fontSize: 11 };
+const GRID = "color-mix(in oklab, var(--line) 85%, transparent)";
 
 export type SeriesKey = "gross" | "energy" | "sessions";
 
@@ -50,10 +50,10 @@ function ChartTip({
             Total: <span className="text-main font-medium">{money(p.grossCents)}</span>
           </div>
           <div>
-            <span className="text-brand-500">■</span> Pix {money(p.pixCents)}
+            <span className="text-accent">■</span> Pix {money(p.pixCents)}
           </div>
           <div>
-            <span className="text-sky-500">■</span> Cartão {money(p.cardCents)}
+            <span className="text-info">■</span> Cartão {money(p.cardCents)}
           </div>
         </div>
       )}
@@ -99,7 +99,7 @@ export function EvolutionChart({
         />
         <YAxis tick={AXIS} tickLine={false} axisLine={false} width={64} tickFormatter={tickFmt} />
         <Tooltip
-          cursor={{ fill: "rgba(127,140,155,0.10)" }}
+          cursor={{ fill: "var(--surface-2)" }}
           content={(props) => (
             <ChartTip
               active={props.active}
@@ -110,13 +110,13 @@ export function EvolutionChart({
         />
         {series === "gross" && (
           <>
-            <Bar dataKey="pix" stackId="a" fill={TONE_HEX.green} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="card" stackId="a" fill={TONE_HEX.blue} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="pix" stackId="a" fill="var(--accent)" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="card" stackId="a" fill="var(--info)" radius={[4, 4, 0, 0]} />
           </>
         )}
-        {series === "energy" && <Bar dataKey="kwh" fill={TONE_HEX.green} radius={[4, 4, 0, 0]} />}
+        {series === "energy" && <Bar dataKey="kwh" fill="var(--accent)" radius={[4, 4, 0, 0]} />}
         {series === "sessions" && (
-          <Bar dataKey="sessions" fill={TONE_HEX.green} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="sessions" fill="var(--accent)" radius={[4, 4, 0, 0]} />
         )}
       </BarChart>
     </ResponsiveContainer>

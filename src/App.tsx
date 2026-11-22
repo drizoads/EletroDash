@@ -16,7 +16,7 @@ function NotFound() {
   return (
     <Empty>
       Página não encontrada.{" "}
-      <Link to="/" className="text-brand-500 underline">
+      <Link to="/" className="text-accent underline">
         Voltar para a visão geral
       </Link>
     </Empty>

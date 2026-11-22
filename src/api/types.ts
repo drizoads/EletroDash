@@ -188,6 +188,8 @@ export interface Account {
   asaasStatus: "pending" | "approved" | "rejected";
   pixKeyMasked: string;
   plan: Plan;
+  /** Quem está logado no painel. */
+  owner: { name: string; role: string };
   users: { name: string; email: string; role: string; active: boolean }[];
 }
 

@@ -67,7 +67,9 @@ function buckets(period: Period): { bucket: "day" | "hour"; starts: Date[] } {
   const hourly = to.getTime() - from.getTime() <= 26 * HOUR;
   const starts: Date[] = [];
   const cur = new Date(from);
-  while (cur < to) {
+  // Por hora, só até a hora atual (o resto do dia ainda não aconteceu).
+  const stop = hourly ? new Date(Math.min(to.getTime(), Date.now())) : to;
+  while (cur < stop) {
     starts.push(new Date(cur));
     if (hourly) cur.setHours(cur.getHours() + 1);
     else cur.setDate(cur.getDate() + 1);

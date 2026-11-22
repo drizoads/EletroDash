@@ -106,7 +106,7 @@ export function SessionDetail() {
           <ol className="border-line relative ml-2 border-l">
             {s.timeline.map((e, i) => (
               <li key={i} className="mb-5 ml-4 last:mb-0">
-                <span className="bg-brand-500 ring-surface absolute -left-[5px] mt-1.5 size-2.5 rounded-full ring-4 [--tw-ring-color:var(--surface)]" />
+                <span className="bg-accent ring-surface absolute -left-[5px] mt-1.5 size-2.5 rounded-full ring-4 [--tw-ring-color:var(--surface)]" />
                 <div className="text-main text-sm font-medium">{e.label}</div>
                 <div className="text-faint text-xs tabular">{dateTime(e.at)}</div>
                 {e.detail && <div className="text-muted mt-0.5 text-xs">{e.detail}</div>}
@@ -114,7 +114,7 @@ export function SessionDetail() {
             ))}
             {live && (
               <li className="ml-4">
-                <span className="live-dot absolute -left-[5px] mt-1.5 size-2.5 rounded-full bg-sky-500" />
+                <span className="live-dot absolute -left-[5px] mt-1.5 size-2.5 rounded-full bg-info" />
                 <div className="text-main text-sm font-medium">Carregando…</div>
                 <div className="text-faint text-xs">
                   {kwh(s.energyWh)} · {money(s.grossCents)} até agora

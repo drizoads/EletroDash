@@ -1,25 +1,39 @@
-import type { ReactNode } from "react";
-import { ArrowDownRight, ArrowUpRight, Inbox, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { ArrowDownRight, ArrowUpRight, Inbox } from "lucide-react";
 import type { ConnectorStatus, PaymentMethod, SessionStatus } from "../api";
 
 export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
+/** Atraso em cascata para a animação de entrada (`.rise`). */
+export const stagger = (i: number, step = 60): CSSProperties => ({
+  animationDelay: `${i * step}ms`,
+});
+
 export function PageHeader({
   title,
   subtitle,
   actions,
+  eyebrow,
 }: {
-  title: string;
-  subtitle?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
   actions?: ReactNode;
+  eyebrow?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="rise mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-main text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-muted mt-1 text-sm">{subtitle}</p>}
+        {eyebrow && (
+          <div className="text-faint mb-2 text-[11px] font-medium tracking-[0.14em] uppercase">
+            {eyebrow}
+          </div>
+        )}
+        <h1 className="font-display text-main text-[2.5rem] leading-none tracking-[-0.01em]">
+          {title}
+        </h1>
+        {subtitle && <p className="text-muted mt-2.5 max-w-2xl text-sm">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -32,18 +46,23 @@ export function Card({
   children,
   className,
   padded = true,
+  style,
 }: {
   title?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
   padded?: boolean;
+  style?: CSSProperties;
 }) {
   return (
-    <section className={cx("bg-surface border-line rounded-2xl border", className)}>
+    <section
+      style={style}
+      className={cx("rise bg-surface border-line rounded-2xl border", className)}
+    >
       {(title || action) && (
         <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-2">
-          <h2 className="text-main text-sm font-semibold">{title}</h2>
+          <h2 className="text-main text-sm font-medium">{title}</h2>
           {action}
         </header>
       )}
@@ -54,6 +73,46 @@ export function Card({
   );
 }
 
+const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+
+/** Número que "rola" até o valor novo. */
+export function AnimatedNumber({
+  value,
+  format,
+  duration = 1100,
+}: {
+  value: number;
+  format: (n: number) => string;
+  duration?: number;
+}) {
+  const [shown, setShown] = useState(0);
+  const from = useRef(0);
+  const shownRef = useRef(0);
+
+  useEffect(() => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setShown(value);
+      shownRef.current = value;
+      return;
+    }
+    from.current = shownRef.current;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const v = from.current + (value - from.current) * easeOutExpo(t);
+      shownRef.current = v;
+      setShown(v);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+
+  return <>{format(Math.round(shown))}</>;
+}
+
 export function DeltaTag({ value }: { value: number | null }) {
   if (value === null || !Number.isFinite(value)) return null;
   const up = value >= 0;
@@ -61,73 +120,135 @@ export function DeltaTag({ value }: { value: number | null }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium tabular",
-        up
-          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+        "tabular inline-flex items-center gap-0.5 text-xs font-medium",
+        up ? "text-ok" : "text-bad",
       )}
       title="Comparado ao período anterior"
     >
-      <Icon className="size-3" />
+      <Icon className="size-3.5" />
       {Math.abs(value).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
     </span>
+  );
+}
+
+/** Mini gráfico de linha para os cards. */
+export function Sparkline({
+  values,
+  className,
+  color = "var(--accent)",
+}: {
+  values: number[];
+  className?: string;
+  color?: string;
+}) {
+  const id = useRef(`spk-${Math.random().toString(36).slice(2)}`).current;
+  if (values.length < 2) return <div className={className} />;
+  const w = 120;
+  const h = 32;
+  const max = Math.max(...values, 1);
+  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, h - 2 - (v / max) * (h - 4)]);
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x?.toFixed(1)},${y?.toFixed(1)}`).join("");
+  const area = `${line}L${w},${h}L0,${h}Z`;
+  const last = pts[pts.length - 1] ?? [w, h];
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className} aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${id})`} />
+      <path
+        d={line}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        vectorEffect="non-scaling-stroke"
+        strokeLinejoin="round"
+        className="spark-line"
+        pathLength={1}
+      />
+      <circle cx={last[0]} cy={last[1]} r="2" fill={color} />
+    </svg>
   );
 }
 
 export function StatCard({
   label,
   value,
+  format,
   hint,
   delta,
   icon,
   onClick,
+  spark,
+  featured,
+  style,
 }: {
   label: string;
-  value: ReactNode;
+  /** Valor numérico (animado) ou undefined enquanto carrega. */
+  value: number | undefined;
+  format: (n: number) => string;
   hint?: ReactNode;
   delta?: number | null;
   icon?: ReactNode;
   onClick?: () => void;
+  spark?: number[];
+  featured?: boolean;
+  style?: CSSProperties;
 }) {
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       onClick={onClick}
+      style={style}
       className={cx(
-        "bg-surface border-line flex flex-col gap-2 rounded-2xl border p-5 text-left",
-        onClick && "hover:border-brand-500/50 transition-colors",
+        "rise group bg-surface border-line relative flex flex-col overflow-hidden rounded-2xl border p-5 text-left transition-[border-color,transform] duration-300",
+        onClick && "hover:border-accent/40 cursor-pointer hover:-translate-y-0.5",
+        featured && "halo",
       )}
     >
-      <div className="text-muted flex items-center justify-between text-sm">
+      {featured && (
+        <span className="via-accent/60 absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent" />
+      )}
+      <div className="text-muted flex items-center justify-between text-[13px]">
         <span className="flex items-center gap-2">
-          {icon}
+          <span className={cx(featured ? "text-accent" : "text-faint")}>{icon}</span>
           {label}
         </span>
-        {delta !== undefined && <DeltaTag value={delta} />}
+        {value !== undefined && delta !== undefined && <DeltaTag value={delta} />}
       </div>
-      <div className="text-main text-2xl font-semibold tracking-tight tabular">{value}</div>
-      {hint && <div className="text-faint text-xs tabular">{hint}</div>}
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="text-main text-[1.75rem] leading-none whitespace-nowrap font-semibold tracking-[-0.02em] tabular">
+          {value === undefined ? (
+            <div className="skeleton h-7 w-36" />
+          ) : (
+            <AnimatedNumber value={value} format={format} />
+          )}
+        </div>
+        {spark && value !== undefined && (
+          <Sparkline values={spark} className="h-8 w-full max-w-24 min-w-10 opacity-90" />
+        )}
+      </div>
+      <div className="text-faint mt-3 min-h-4 text-xs tabular">
+        {value === undefined ? <div className="skeleton h-3 w-28" /> : hint}
+      </div>
     </Tag>
   );
 }
 
 type Tone = "green" | "blue" | "amber" | "red" | "gray" | "violet";
-const TONE: Record<Tone, string> = {
-  green: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-emerald-500/25",
-  blue: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-sky-500/25",
-  amber: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-amber-500/25",
-  red: "bg-rose-500/12 text-rose-700 dark:text-rose-300 ring-rose-500/25",
-  gray: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-slate-500/25",
-  violet: "bg-violet-500/12 text-violet-700 dark:text-violet-300 ring-violet-500/25",
+const TONE_VAR: Record<Tone, string> = {
+  green: "var(--ok)",
+  blue: "var(--info)",
+  amber: "var(--warn)",
+  red: "var(--bad)",
+  gray: "var(--idle)",
+  violet: "var(--accent)",
 };
-export const TONE_HEX: Record<Tone, string> = {
-  green: "#10b981",
-  blue: "#0ea5e9",
-  amber: "#f59e0b",
-  red: "#f43f5e",
-  gray: "#64748b",
-  violet: "#8b5cf6",
-};
+/** Cor de cada tom, como valor CSS (serve também para os gráficos). */
+export const TONE_HEX = TONE_VAR;
 
 export function Badge({
   tone = "gray",
@@ -138,19 +259,20 @@ export function Badge({
   children: ReactNode;
   dot?: boolean;
 }) {
+  const c = TONE_VAR[tone];
   return (
     <span
-      className={cx(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset",
-        TONE[tone],
-      )}
+      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+      style={{
+        color: c,
+        backgroundColor: `color-mix(in oklab, ${c} 13%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${c} 22%, transparent)`,
+      }}
     >
-      {dot && (
-        <span
-          className="live-dot size-1.5 rounded-full"
-          style={{ backgroundColor: TONE_HEX[tone] }}
-        />
-      )}
+      <span
+        className={cx("size-1.5 rounded-full", dot && "live-dot")}
+        style={{ backgroundColor: c }}
+      />
       {children}
     </span>
   );
@@ -208,14 +330,16 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="bg-surface-2 border-line inline-flex max-w-full overflow-x-auto rounded-xl border p-0.5">
+    <div className="bg-surface-2 border-line inline-flex max-w-full overflow-x-auto rounded-full border p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={cx(
-            "rounded-[10px] px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
-            value === o.value ? "bg-surface text-main shadow-sm" : "text-muted hover:text-main",
+            "rounded-full px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-all duration-200",
+            value === o.value
+              ? "bg-surface text-main shadow-[0_1px_2px_rgba(0,0,0,.12)]"
+              : "text-muted hover:text-main",
           )}
         >
           {o.label}
@@ -242,7 +366,7 @@ export function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-surface border-line text-main focus:ring-brand-500/40 h-9 rounded-lg border px-2.5 text-sm outline-none focus:ring-2"
+        className="bg-surface border-line text-main focus:ring-accent/40 h-9 rounded-lg border px-2.5 text-sm outline-none focus:ring-2"
       >
         {children}
       </select>
@@ -272,11 +396,10 @@ export function Button({
       disabled={disabled}
       title={title}
       className={cx(
-        "inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "bg-brand-600 hover:bg-brand-700 text-white",
+        "inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
+        variant === "primary" && "bg-accent-strong text-on-accent hover:opacity-90",
         variant === "secondary" && "bg-surface border-line text-main hover:bg-surface-2 border",
-        variant === "danger" &&
-          "border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-300",
+        variant === "danger" && "border-bad/30 bg-bad/10 text-bad hover:bg-bad/20 border",
         variant === "ghost" && "text-muted hover:text-main hover:bg-surface-2",
       )}
     >
@@ -285,11 +408,32 @@ export function Button({
   );
 }
 
-export function Loading({ label = "Carregando…" }: { label?: string }) {
+/** Placeholder animado enquanto os dados chegam. */
+export function Loading({ rows = 4, chart }: { rows?: number; chart?: boolean }) {
+  if (chart) {
+    return (
+      <div className="flex h-[260px] items-end gap-2 pt-6" aria-label="Carregando">
+        {Array.from({ length: 24 }, (_, i) => (
+          <div
+            key={i}
+            className="skeleton flex-1"
+            style={{ height: `${30 + ((i * 37) % 60)}%`, animationDelay: `${i * 40}ms` }}
+          />
+        ))}
+      </div>
+    );
+  }
   return (
-    <div className="text-muted flex items-center justify-center gap-2 py-12 text-sm">
-      <Loader2 className="size-4 animate-spin" />
-      {label}
+    <div className="space-y-3 py-2" aria-label="Carregando">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex items-center gap-3" style={{ opacity: 1 - i * 0.15 }}>
+          <div className="skeleton size-8 shrink-0 rounded-full" />
+          <div className="flex-1 space-y-1.5">
+            <div className="skeleton h-3" style={{ width: `${70 - i * 8}%` }} />
+            <div className="skeleton h-2.5 w-1/3" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -297,7 +441,7 @@ export function Loading({ label = "Carregando…" }: { label?: string }) {
 export function Empty({ children }: { children: ReactNode }) {
   return (
     <div className="text-faint flex flex-col items-center justify-center gap-2 py-10 text-sm">
-      <Inbox className="size-6" />
+      <Inbox className="size-6" strokeWidth={1.5} />
       {children}
     </div>
   );
@@ -315,7 +459,7 @@ export function Th({ children, right }: { children?: ReactNode; right?: boolean 
   return (
     <th
       className={cx(
-        "text-faint border-line border-b px-5 py-2.5 text-xs font-medium tracking-wide whitespace-nowrap uppercase first:pl-5",
+        "text-faint border-line border-b px-5 py-2.5 text-[11px] font-medium tracking-[0.08em] whitespace-nowrap uppercase",
         right ? "text-right" : "text-left",
       )}
     >
@@ -339,7 +483,7 @@ export function Td({
     <td
       className={cx(
         "border-line border-b px-5 py-3 whitespace-nowrap",
-        right && "text-right tabular",
+        right && "tabular text-right",
         muted ? "text-muted" : "text-main",
         className,
       )}
