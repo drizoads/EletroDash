@@ -1,7 +1,9 @@
 import type {
   Account,
+  AccountPatch,
   Alert,
   Charger,
+  ChargerPatch,
   ChargingSession,
   ChargingSessionDetail,
   DashboardSummary,
@@ -9,10 +11,15 @@ import type {
   LedgerEntry,
   LedgerFilters,
   LedgerSummary,
+  NewChargerInput,
+  NewChargerResult,
+  NotificationPrefs,
   Page,
   Period,
   SessionFilters,
   Tariff,
+  TariffPatch,
+  TeamUser,
 } from "./types";
 
 /**
@@ -21,6 +28,7 @@ import type {
  * cumpra esta interface usando fetch e trocar a exportação em ./index.ts.
  */
 export interface EletroDashApi {
+  // Leitura
   getSummary(period: Period): Promise<DashboardSummary>;
   getActiveSessions(): Promise<ChargingSession[]>;
   getAlerts(): Promise<Alert[]>;
@@ -39,5 +47,20 @@ export interface EletroDashApi {
   listTariffs(): Promise<Tariff[]>;
   listInvoices(): Promise<Invoice[]>;
   getAccount(): Promise<Account>;
+  getNotifications(): Promise<NotificationPrefs>;
+
+  // Ações
   stopSession(id: string): Promise<void>;
+  createCharger(input: NewChargerInput): Promise<NewChargerResult>;
+  updateCharger(id: string, patch: ChargerPatch): Promise<Charger>;
+  /** Cria uma nova versão do preço; recargas em andamento não mudam. */
+  updateTariff(id: string, patch: TariffPatch): Promise<Tariff>;
+  updateAccount(patch: AccountPatch): Promise<Account>;
+  inviteUser(user: Omit<TeamUser, "active">): Promise<TeamUser>;
+  updateUser(email: string, patch: Partial<Omit<TeamUser, "email">>): Promise<TeamUser>;
+  removeUser(email: string): Promise<void>;
+  updateNotifications(prefs: NotificationPrefs): Promise<NotificationPrefs>;
+
+  /** Só no protótipo: apaga as alterações feitas e volta aos dados de exemplo. */
+  resetDemo?(): Promise<void>;
 }

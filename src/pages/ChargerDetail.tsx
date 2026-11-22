@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, Power, QrCode, RefreshCw, Send, Unlock } from "lucide-react";
+import { ArrowLeft, Pencil, Power, QrCode, RefreshCw, Send, Unlock } from "lucide-react";
 import { api } from "../api";
 import { ActiveSessionsList } from "../components/ActiveSessions";
+import { EditChargerModal } from "../components/ChargerForms";
 import {
   Button,
   Card,
@@ -16,6 +17,7 @@ import {
   Table,
   Td,
   Th,
+  toast,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { dateTime, kwh, money, pricePerKwh, since } from "../lib/format";
@@ -25,6 +27,7 @@ type Tab = "resumo" | "recargas" | "ocpp";
 export function ChargerDetail() {
   const { id = "" } = useParams();
   const [tab, setTab] = useState<Tab>("resumo");
+  const [editing, setEditing] = useState(false);
   const charger = useApi(() => api.getCharger(id), [id], 10_000);
   const active = useApi(() => api.getActiveSessions(), [], 5_000);
   const sessions = useApi(
@@ -37,8 +40,7 @@ export function ChargerDetail() {
   if (!c) return <Empty>Carregador não encontrado.</Empty>;
 
   const running = active.data?.filter((s) => s.chargerId === c.id) ?? [];
-  const command = (label: string) =>
-    alert(`Protótipo: o comando "${label}" será enviado ao carregador pela central OCPP.`);
+  const command = (label: string) => toast(`Comando "${label}" enviado ao carregador`);
 
   return (
     <>
@@ -52,16 +54,27 @@ export function ChargerDetail() {
         title={c.name}
         subtitle={`${c.code} · ${c.location}`}
         actions={
-          <Segmented
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: "resumo", label: "Resumo" },
-              { value: "recargas", label: "Recargas" },
-              { value: "ocpp", label: "OCPP e comandos" },
-            ]}
-          />
+          <>
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "resumo", label: "Resumo" },
+                { value: "recargas", label: "Recargas" },
+                { value: "ocpp", label: "OCPP e comandos" },
+              ]}
+            />
+            <Button onClick={() => setEditing(true)}>
+              <Pencil className="size-3.5" /> Editar
+            </Button>
+          </>
         }
+      />
+      <EditChargerModal
+        charger={c}
+        open={editing}
+        onClose={() => setEditing(false)}
+        onSaved={charger.reload}
       />
 
       {tab === "resumo" && (
@@ -101,7 +114,7 @@ export function ChargerDetail() {
                   O motorista lê o código e cai no WhatsApp do EletroPay com o código{" "}
                   <b className="text-main">{c.code}</b>.
                   <div className="mt-2">
-                    <Button onClick={() => alert("Protótipo: download do QR Code em PDF.")}>
+                    <Button onClick={() => toast("QR Code baixado (simulação)")}>
                       Baixar para imprimir
                     </Button>
                   </div>

@@ -10,6 +10,7 @@ import {
   METHOD_LABEL,
   PageHeader,
   SessionBadge,
+  toast,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import {
@@ -49,13 +50,13 @@ export function SessionDetail() {
               <Button
                 variant="secondary"
                 onClick={() =>
-                  alert("Protótipo: estorno total ou parcial, com motivo, via API do EletroPay.")
+                  toast("Estorno: disponível quando a API do EletroPay estiver conectada")
                 }
               >
                 <Undo2 className="size-4" /> Estornar
               </Button>
             )}
-            <Button onClick={() => alert("Protótipo: comprovante em PDF.")}>
+            <Button onClick={() => toast("Comprovante gerado (simulação)")}>
               <Receipt className="size-4" /> Comprovante
             </Button>
           </>

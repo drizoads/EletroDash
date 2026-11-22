@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Lock, Globe, Plus } from "lucide-react";
 import { api, type ConnectorStatus } from "../api";
+import { NewChargerWizard } from "../components/ChargerForms";
 import {
   Badge,
   Button,
@@ -25,6 +26,7 @@ export function Chargers() {
   const visibility = params.get("tipo") ?? "";
   const chargers = useApi(() => api.listChargers(), [], 10_000);
   const active = useApi(() => api.getActiveSessions(), [], 5_000);
+  const [wizard, setWizard] = useState(false);
 
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params);
@@ -49,13 +51,15 @@ export function Chargers() {
         title="Carregadores"
         subtitle="Status em tempo real, preço vigente e conexão OCPP de cada carregador."
         actions={
-          <Button
-            variant="primary"
-            onClick={() => alert("O assistente de cadastro entra na próxima etapa do protótipo.")}
-          >
+          <Button variant="primary" onClick={() => setWizard(true)}>
             <Plus className="size-4" /> Novo carregador
           </Button>
         }
+      />
+      <NewChargerWizard
+        open={wizard}
+        onClose={() => setWizard(false)}
+        onCreated={chargers.reload}
       />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
@@ -143,7 +147,11 @@ export function Chargers() {
                     </Td>
                     <Td right>{pricePerKwh(c.priceKwhCents)}</Td>
                     <Td muted>
-                      {c.connectors.every((con) => con.status === "offline") ? (
+                      {c.pendingBoot ? (
+                        <Badge tone="violet" dot>
+                          Aguardando conexão
+                        </Badge>
+                      ) : c.connectors.every((con) => con.status === "offline") ? (
                         <Badge tone="gray">{since(c.lastSeenAt)}</Badge>
                       ) : (
                         <span className="text-xs">{since(c.lastSeenAt)}</span>

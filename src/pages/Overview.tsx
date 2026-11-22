@@ -160,7 +160,10 @@ export function Overview() {
 
   // Ao trocar o período, os cards voltam ao estado "carregando" por um instante.
   const s = summary.loading ? undefined : summary.data;
-  const gross = s?.daily.map((d) => d.grossCents);
+  // Sparklines só até agora (no "Hoje", as horas futuras ainda estão vazias).
+  const nowIso = new Date().toISOString();
+  const past = s?.daily.filter((d) => d.date <= nowIso);
+  const gross = past?.map((d) => d.grossCents);
 
   return (
     <>
@@ -211,7 +214,7 @@ export function Overview() {
           icon={<Zap className="size-4" strokeWidth={1.6} />}
           value={s?.energyWh}
           format={kwhInt}
-          spark={s?.daily.map((d) => d.energyWh)}
+          spark={past?.map((d) => d.energyWh)}
           hint={s && `${int(Math.round(s.chargingMinutes / 60))} h de carregamento`}
           delta={s && delta(s.energyWh, s.previous.energyWh)}
         />
@@ -221,7 +224,7 @@ export function Overview() {
           icon={<BatteryCharging className="size-4" strokeWidth={1.6} />}
           value={s?.sessions}
           format={int}
-          spark={s?.daily.map((d) => d.sessions)}
+          spark={past?.map((d) => d.sessions)}
           hint={s && `Ticket médio ${money(s.avgTicketCents)}`}
           delta={s && delta(s.sessions, s.previous.sessions)}
           onClick={() => navigate("/recargas")}

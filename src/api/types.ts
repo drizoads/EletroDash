@@ -33,7 +33,29 @@ export interface Charger {
   priceKwhCents: number;
   activeThisMonth: boolean;
   connectors: Connector[];
+  /** Cadastrado, mas o carregador ainda não se conectou à central. */
+  pendingBoot?: boolean;
 }
+
+export interface NewChargerInput {
+  name: string;
+  location: string;
+  visibility: "public" | "private";
+  maxKw: number;
+  connectors: { type: ConnectorType; maxKw: number }[];
+  priceKwhCents: number;
+}
+
+export interface NewChargerResult {
+  charger: Charger;
+  /** Endereço e token que o instalador digita no carregador. Token aparece uma vez só. */
+  ocppUrl: string;
+  authToken: string;
+}
+
+export type ChargerPatch = Partial<
+  Pick<Charger, "name" | "location" | "visibility" | "priceKwhCents">
+>;
 
 export type SessionStatus =
   "starting" | "charging" | "completed" | "failed" | "cancelled" | "refunded";
@@ -190,8 +212,43 @@ export interface Account {
   plan: Plan;
   /** Quem está logado no painel. */
   owner: { name: string; role: string };
-  users: { name: string; email: string; role: string; active: boolean }[];
+  contactEmail: string;
+  supportWhatsapp: string;
+  address: string;
+  city: string;
+  bankAccountMasked: string;
+  users: TeamUser[];
 }
+
+export type AccountPatch = Partial<
+  Pick<
+    Account,
+    "operatorName" | "legalName" | "contactEmail" | "supportWhatsapp" | "address" | "city"
+  >
+>;
+
+export type TeamRole = "Dono" | "Financeiro" | "Suporte" | "Leitura";
+
+export interface TeamUser {
+  name: string;
+  email: string;
+  role: TeamRole;
+  active: boolean;
+}
+
+export type NotificationEvent =
+  "offline" | "faulted" | "session_done" | "refund" | "daily_summary" | "invoice";
+
+export interface NotificationPrefs {
+  email: boolean;
+  whatsapp: boolean;
+  events: Record<NotificationEvent, boolean>;
+  offlineAfterMin: number;
+}
+
+export type TariffPatch = Partial<
+  Pick<Tariff, "name" | "priceKwhCents" | "idleGraceMin" | "idlePriceMinCents">
+>;
 
 export interface Page<T> {
   items: T[];

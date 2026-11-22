@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useTheme } from "../lib/theme";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import {
   BatteryCharging,
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { useApi } from "../hooks/useApi";
-import { cx } from "./ui";
+import { Toaster, cx, toast } from "./ui";
 
 interface NavItem {
   to: string;
@@ -53,19 +54,6 @@ const NAV: { section?: string; items: NavItem[] }[] = [
     ],
   },
 ];
-
-function useTheme() {
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    try {
-      localStorage.setItem("eletrodash-theme", dark ? "dark" : "light");
-    } catch {
-      /* armazenamento indisponível: segue sem lembrar */
-    }
-  }, [dark]);
-  return { dark, toggle: () => setDark((d) => !d) };
-}
 
 /** Marca: só tipografia, com o ponto final no tom de acento. */
 export function Wordmark({ className }: { className?: string }) {
@@ -178,6 +166,11 @@ export function Layout() {
   useEffect(() => setOpen(false), [location.pathname]);
 
   const account = useApi(() => api.getAccount(), []);
+  const reloadAccount = account.reload;
+  useEffect(() => {
+    window.addEventListener("eletrodash:account", reloadAccount);
+    return () => window.removeEventListener("eletrodash:account", reloadAccount);
+  }, [reloadAccount]);
   const alerts = useApi(() => api.getAlerts(), [], 15_000);
   const active = useApi(() => api.getActiveSessions(), [], 10_000);
   const workspace = account.data
@@ -246,9 +239,7 @@ export function Layout() {
             <div className="ml-auto flex items-center gap-1.5">
               <button
                 className="border-line bg-surface text-faint hover:text-muted hidden h-9 w-64 items-center gap-2 rounded-full border px-3.5 text-[13px] transition-colors md:flex"
-                onClick={() =>
-                  alert("Protótipo: busca rápida por recarga, carregador ou motorista.")
-                }
+                onClick={() => toast("Busca rápida chega na próxima versão")}
               >
                 <Search className="size-4" strokeWidth={1.6} />
                 Buscar…
@@ -296,6 +287,7 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }

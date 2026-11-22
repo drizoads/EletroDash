@@ -1,6 +1,7 @@
 import type { EletroDashApi } from "../client";
 import type {
   Alert,
+  Charger,
   ChargingSession,
   ChargingSessionDetail,
   DailyPoint,
@@ -10,7 +11,18 @@ import type {
   SessionEvent,
   SessionFilters,
 } from "../types";
-import { account, active, chargers, history, invoices, ledger, tariffs } from "./data";
+import {
+  account,
+  active,
+  chargers,
+  defaultNotifications,
+  history,
+  invoices,
+  ledger,
+  notifications,
+  tariffs,
+} from "./data";
+import { clearDemo, persist, saved } from "./store";
 
 const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms + Math.random() * 200));
 const clone = <T>(v: T): T => structuredClone(v);
@@ -67,9 +79,7 @@ function buckets(period: Period): { bucket: "day" | "hour"; starts: Date[] } {
   const hourly = to.getTime() - from.getTime() <= 26 * HOUR;
   const starts: Date[] = [];
   const cur = new Date(from);
-  // Por hora, só até a hora atual (o resto do dia ainda não aconteceu).
-  const stop = hourly ? new Date(Math.min(to.getTime(), Date.now())) : to;
-  while (cur < stop) {
+  while (cur < to) {
     starts.push(new Date(cur));
     if (hourly) cur.setHours(cur.getHours() + 1);
     else cur.setDate(cur.getDate() + 1);
@@ -150,6 +160,7 @@ export const mockApi: EletroDashApi = {
     await delay(150);
     const alerts: Alert[] = [];
     for (const c of chargers) {
+      if (c.pendingBoot) continue;
       for (const con of c.connectors) {
         if (con.status === "offline") {
           alerts.push({
@@ -370,5 +381,151 @@ export const mockApi: EletroDashApi = {
       con.status = "available";
       con.statusSince = new Date().toISOString();
     }
+  },
+  async getNotifications() {
+    await delay(150);
+    return clone(notifications);
+  },
+
+  async createCharger(input) {
+    await delay(600);
+    const n = 1040 + chargers.length;
+    const id = `chg_${Date.now().toString(36)}`;
+    const ocppId = `ELP-NEW-${n}`;
+    const now = new Date().toISOString();
+    const charger: Charger = {
+      id,
+      name: input.name,
+      code: `EP-${n}`,
+      location: input.location,
+      visibility: input.visibility,
+      maxKw: input.maxKw,
+      ocppId,
+      ocppVersion: "1.6",
+      vendor: "—",
+      model: "—",
+      firmware: "—",
+      lastSeenAt: now,
+      priceKwhCents: input.priceKwhCents,
+      activeThisMonth: false,
+      pendingBoot: true,
+      connectors: input.connectors.map((c, i) => ({
+        id: `${id}_${i + 1}`,
+        number: i + 1,
+        type: c.type,
+        maxKw: c.maxKw,
+        status: "offline",
+        statusSince: now,
+      })),
+    };
+    chargers.push(charger);
+    const save = () =>
+      persist({ addedChargers: chargers.filter((c) => c.id.length > 7).map((c) => clone(c)) });
+    save();
+    // Simula o instalador ligando o carregador: o primeiro BootNotification chega em ~8 s.
+    setTimeout(() => {
+      const c = chargers.find((x) => x.id === id);
+      if (!c) return;
+      const at = new Date().toISOString();
+      c.pendingBoot = false;
+      c.vendor = c.maxKw > 22 ? "Voltrix" : "Amperis";
+      c.model = c.maxKw > 22 ? `DC${c.maxKw}` : `AC${c.maxKw}`;
+      c.firmware = "3.2.0";
+      c.lastSeenAt = at;
+      c.activeThisMonth = true;
+      for (const con of c.connectors) {
+        con.status = "available";
+        con.statusSince = at;
+      }
+      save();
+    }, 8000);
+    return {
+      charger: clone(charger),
+      ocppUrl: `wss://central.eletropay.com.br/ocpp/${ocppId}`,
+      authToken: Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) =>
+        b.toString(16).padStart(2, "0"),
+      ).join(""),
+    };
+  },
+
+  async updateCharger(id, patch) {
+    await delay(400);
+    const c = chargers.find((x) => x.id === id);
+    if (!c) throw new Error("Carregador não encontrado");
+    Object.assign(c, patch);
+    for (const s of [...history, ...active]) if (s.chargerId === id) s.chargerName = c.name;
+    if (c.id.length > 7) {
+      persist({ addedChargers: chargers.filter((x) => x.id.length > 7).map((x) => clone(x)) });
+    } else {
+      persist({
+        chargerPatches: {
+          ...saved.chargerPatches,
+          [id]: { ...saved.chargerPatches?.[id], ...patch },
+        },
+      });
+    }
+    return clone(c);
+  },
+
+  async updateTariff(id, patch) {
+    await delay(400);
+    const t = tariffs.find((x) => x.id === id);
+    if (!t) throw new Error("Preço não encontrado");
+    Object.assign(t, patch, {
+      version: t.version + 1,
+      validFrom: new Date().toISOString(),
+      createdBy: account.owner.name,
+    });
+    if (patch.priceKwhCents !== undefined) {
+      const names = t.appliesTo.split(",").map((n) => n.trim());
+      for (const c of chargers) if (names.includes(c.name)) c.priceKwhCents = t.priceKwhCents;
+    }
+    persist({ tariffs: clone(tariffs) });
+    return clone(t);
+  },
+
+  async updateAccount(patch) {
+    await delay(400);
+    Object.assign(account, patch);
+    persist({ account: clone(account) });
+    return clone(account);
+  },
+
+  async inviteUser(user) {
+    await delay(400);
+    if (account.users.some((u) => u.email.toLowerCase() === user.email.toLowerCase())) {
+      throw new Error("Já existe alguém com esse e-mail na equipe.");
+    }
+    const created = { ...user, active: true };
+    account.users.push(created);
+    persist({ account: clone(account) });
+    return clone(created);
+  },
+
+  async updateUser(email, patch) {
+    await delay(300);
+    const u = account.users.find((x) => x.email === email);
+    if (!u) throw new Error("Usuário não encontrado");
+    Object.assign(u, patch);
+    persist({ account: clone(account) });
+    return clone(u);
+  },
+
+  async removeUser(email) {
+    await delay(300);
+    account.users = account.users.filter((u) => u.email !== email);
+    persist({ account: clone(account) });
+  },
+
+  async updateNotifications(prefs) {
+    await delay(300);
+    Object.assign(notifications, clone(prefs));
+    persist({ notifications: clone(notifications) });
+    return clone(notifications);
+  },
+
+  async resetDemo() {
+    clearDemo();
+    Object.assign(notifications, clone(defaultNotifications));
   },
 };

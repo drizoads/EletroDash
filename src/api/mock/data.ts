@@ -9,10 +9,12 @@ import type {
   ConnectorStatus,
   Invoice,
   LedgerEntry,
+  NotificationPrefs,
   PaymentMethod,
   SessionStatus,
   Tariff,
 } from "../types";
+import { saved } from "./store";
 
 function mulberry32(seed: number) {
   let a = seed;
@@ -520,6 +522,11 @@ export const account: Account = {
   pixKeyMasked: "CNPJ ••.•••.678/0001-90",
   plan: PLAN,
   owner: { name: "Arthur", role: "Dono · Inova Solar" },
+  contactEmail: "contato@inovasolar.exemplo",
+  supportWhatsapp: "(69) 99999-0000",
+  address: "Av. Brasil, 1200 · Centro",
+  city: "Ji-Paraná · RO",
+  bankAccountMasked: "Itaú · ag. 0001 · cc ••••4821-0",
   users: [
     { name: "Arthur", email: "arthur@inovasolar.exemplo", role: "Dono", active: true },
     {
@@ -531,3 +538,33 @@ export const account: Account = {
     { name: "Atendimento", email: "suporte@inovasolar.exemplo", role: "Suporte", active: false },
   ],
 };
+
+export const defaultNotifications: NotificationPrefs = {
+  email: true,
+  whatsapp: true,
+  events: {
+    offline: true,
+    faulted: true,
+    session_done: false,
+    refund: true,
+    daily_summary: true,
+    invoice: true,
+  },
+  offlineAfterMin: 10,
+};
+
+export const notifications: NotificationPrefs = structuredClone(
+  saved.notifications ?? defaultNotifications,
+);
+
+// ---------- Alterações feitas no protótipo (guardadas no navegador) ----------
+
+for (const [id, patch] of Object.entries(saved.chargerPatches ?? {})) {
+  const c = chargers.find((x) => x.id === id);
+  if (!c) continue;
+  Object.assign(c, patch);
+  for (const s of [...history, ...active]) if (s.chargerId === id) s.chargerName = c.name;
+}
+for (const c of saved.addedChargers ?? []) chargers.push(structuredClone(c));
+if (saved.tariffs) tariffs.splice(0, tariffs.length, ...structuredClone(saved.tariffs));
+if (saved.account) Object.assign(account, structuredClone(saved.account));

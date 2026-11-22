@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from "react";
 import { ArrowDownRight, ArrowUpRight, Inbox } from "lucide-react";
 import type { ConnectorStatus, PaymentMethod, SessionStatus } from "../api";
 
@@ -397,7 +405,8 @@ export function Button({
       title={title}
       className={cx(
         "inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "bg-accent-strong text-on-accent hover:opacity-90",
+        variant === "primary" &&
+          "bg-accent/12 text-accent ring-accent/35 hover:bg-accent/20 ring-1 ring-inset",
         variant === "secondary" && "bg-surface border-line text-main hover:bg-surface-2 border",
         variant === "danger" && "border-bad/30 bg-bad/10 text-bad hover:bg-bad/20 border",
         variant === "ghost" && "text-muted hover:text-main hover:bg-surface-2",
@@ -532,5 +541,183 @@ export function KeyValue({ items }: { items: [string, ReactNode][] }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+/* ---------- Formulários ---------- */
+
+export function Modal({
+  open,
+  onClose,
+  title,
+  subtitle,
+  children,
+  footer,
+  wide,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  wide?: boolean;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+      <div className="fade-in absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={cx(
+          "pop-in bg-surface border-line relative flex max-h-[92vh] w-full flex-col rounded-t-3xl border shadow-2xl sm:rounded-3xl",
+          wide ? "sm:max-w-2xl" : "sm:max-w-lg",
+        )}
+      >
+        <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">
+          <div>
+            <h2 className="text-main text-lg font-semibold tracking-[-0.01em]">{title}</h2>
+            {subtitle && <p className="text-muted mt-1 text-sm">{subtitle}</p>}
+          </div>
+          <button
+            onClick={onClose}
+            className="text-faint hover:text-main hover:bg-surface-2 -mt-1 -mr-2 grid size-8 place-items-center rounded-full"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
+        </header>
+        <div className="overflow-y-auto px-6 pb-6">{children}</div>
+        {footer && (
+          <footer className="border-line flex justify-end gap-2 border-t px-6 py-4">
+            {footer}
+          </footer>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function Field({
+  label,
+  hint,
+  children,
+  className,
+}: {
+  label: string;
+  hint?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={cx("flex flex-col gap-1.5", className)}>
+      <span className="text-muted text-[13px] font-medium">{label}</span>
+      {children}
+      {hint && <span className="text-faint text-xs">{hint}</span>}
+    </label>
+  );
+}
+
+const INPUT =
+  "bg-surface border-line text-main placeholder:text-faint focus:ring-accent/35 focus:border-accent/50 h-10 w-full rounded-xl border px-3 text-sm outline-none transition-shadow focus:ring-4 disabled:opacity-60";
+
+export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={cx(INPUT, props.className)} />;
+}
+
+export function SelectInput(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={cx(INPUT, "pr-8", props.className)} />;
+}
+
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  description,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label?: ReactNode;
+  description?: ReactNode;
+}) {
+  const sw = (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cx(
+        "relative h-6 w-10 shrink-0 rounded-full transition-colors duration-300",
+        checked ? "bg-accent" : "bg-line",
+      )}
+    >
+      <span
+        className={cx(
+          "absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)]",
+          checked && "translate-x-4",
+        )}
+      />
+    </button>
+  );
+  if (!label) return sw;
+  return (
+    <div className="flex items-center justify-between gap-4 py-3">
+      <div>
+        <div className="text-main text-sm">{label}</div>
+        {description && <div className="text-faint text-xs">{description}</div>}
+      </div>
+      {sw}
+    </div>
+  );
+}
+
+/* ---------- Avisos rápidos ---------- */
+
+type ToastItem = { id: number; text: string; tone: "ok" | "bad" };
+let toastSeq = 0;
+const listeners = new Set<(t: ToastItem) => void>();
+
+export function toast(text: string, tone: "ok" | "bad" = "ok") {
+  const t = { id: ++toastSeq, text, tone };
+  listeners.forEach((l) => l(t));
+}
+
+export function Toaster() {
+  const [items, setItems] = useState<ToastItem[]>([]);
+  useEffect(() => {
+    const on = (t: ToastItem) => {
+      setItems((xs) => [...xs, t]);
+      setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== t.id)), 3200);
+    };
+    listeners.add(on);
+    return () => {
+      listeners.delete(on);
+    };
+  }, []);
+  return (
+    <div className="pointer-events-none fixed right-4 bottom-4 z-[60] flex flex-col gap-2 sm:right-6 sm:bottom-6">
+      {items.map((t) => (
+        <div
+          key={t.id}
+          className="pop-in bg-surface border-line text-main flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm shadow-xl"
+        >
+          <span className={cx("size-2 rounded-full", t.tone === "ok" ? "bg-ok" : "bg-bad")} />
+          {t.text}
+        </div>
+      ))}
+    </div>
   );
 }

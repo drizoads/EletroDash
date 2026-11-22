@@ -10,6 +10,7 @@ import {
   Table,
   Td,
   Th,
+  toast,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { date, money } from "../lib/format";
@@ -74,10 +75,7 @@ export function Invoices() {
                   em {date(open.dueDate)}
                 </div>
               </div>
-              <Button
-                variant="primary"
-                onClick={() => alert("Protótipo: copia o Pix copia e cola da fatura.")}
-              >
+              <Button variant="primary" onClick={() => toast("Pix copia e cola copiado")}>
                 <Copy className="size-4" /> Copiar Pix copia e cola
               </Button>
             </div>
