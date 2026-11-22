@@ -244,3 +244,21 @@ body {
 * {
   -webkit-tap-highlight-color: transparent;
 }
+
+/*
+ * O iPhone dá zoom sozinho quando o campo tem letra menor que 16px.
+ * No celular, todo campo usa 16px: a tela fica parada ao digitar.
+ */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Evita o celular aumentar o texto sozinho ao girar a tela. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
