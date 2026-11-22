@@ -77,10 +77,10 @@ function Hero() {
           <div className="text-faint mb-3 min-h-4 text-[11px] font-medium tracking-[0.16em] uppercase">
             {account.data && `${account.data.operatorName} · Painel do proprietário`}
           </div>
-          <h1 className="text-main text-[2.1rem] leading-[1.1] font-semibold tracking-[-0.03em] sm:text-[2.6rem]">
+          <h1 className="text-main text-[2.1rem] leading-[1.1] font-light tracking-[-0.035em] sm:text-[2.6rem]">
             {greeting()},{" "}
             {name ? (
-              <span className="text-accent">{name}.</span>
+              <span className="text-accent font-normal">{name}.</span>
             ) : (
               <span className="skeleton inline-block h-10 w-40 align-middle" />
             )}
