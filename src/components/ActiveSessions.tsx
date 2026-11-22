@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { BatteryMedium, Square } from "lucide-react";
+import { BatteryMedium, Loader2, Square } from "lucide-react";
 import { api, type ChargingSession } from "../api";
 import { duration, kw, kwh, minutesBetween, money } from "../lib/format";
 import { Button, Empty } from "./ui";
@@ -40,12 +40,9 @@ export function ActiveSessionsList({
         const limitWh = (s.prepaidCents / s.priceKwhCents) * 1000;
         const pct = Math.min(100, (s.energyWh / limitWh) * 100);
         return (
-          <li
-            key={s.id}
-            className="relative flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center"
-          >
+          <li key={s.id} className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 pr-24 sm:pr-0">
+              <div className="flex items-center gap-2">
                 <span className="live-dot bg-info size-2 shrink-0 rounded-full" />
                 <Link
                   to={`/recargas/${s.id}`}
@@ -54,6 +51,18 @@ export function ActiveSessionsList({
                   {s.chargerName}
                 </Link>
                 <span className="text-faint shrink-0 text-xs">#{s.connectorNumber}</span>
+                <button
+                  onClick={() => stop(s)}
+                  disabled={stopping === s.id}
+                  aria-label={`Parar recarga em ${s.chargerName}`}
+                  className="border-bad/25 text-bad active:bg-bad/15 ml-auto grid size-8 shrink-0 place-items-center rounded-full border transition-colors disabled:opacity-50 sm:hidden"
+                >
+                  {stopping === s.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Square className="size-3" fill="currentColor" />
+                  )}
+                </button>
               </div>
               <div className="mt-2 flex items-center gap-3">
                 <div className="bg-surface-2 h-1.5 flex-1 overflow-hidden rounded-full">
@@ -92,15 +101,12 @@ export function ActiveSessionsList({
                 </div>
               )}
             </div>
-            <Button
-              variant="danger"
-              onClick={() => stop(s)}
-              disabled={stopping === s.id}
-              className="absolute top-2 right-0 h-7 px-3 text-xs sm:static sm:h-9 sm:px-4 sm:text-sm"
-            >
-              <Square className="size-3.5" fill="currentColor" />
-              {stopping === s.id ? "Parando…" : "Parar"}
-            </Button>
+            <div className="hidden sm:block">
+              <Button variant="danger" onClick={() => stop(s)} disabled={stopping === s.id}>
+                <Square className="size-3.5" fill="currentColor" />
+                {stopping === s.id ? "Parando…" : "Parar"}
+              </Button>
+            </div>
           </li>
         );
       })}

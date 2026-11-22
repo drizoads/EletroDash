@@ -11,6 +11,7 @@ export interface DemoChanges {
   tariffs?: Tariff[];
   addedChargers?: Charger[];
   chargerPatches?: Record<string, ChargerPatch>;
+  readNotices?: string[];
 }
 
 export const saved: DemoChanges = (() => {

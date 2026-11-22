@@ -270,3 +270,18 @@ export interface LedgerFilters {
   reason?: LedgerReason | "";
   account?: "pix" | "card" | "";
 }
+
+export type NoticeKind =
+  "faulted" | "offline" | "idle" | "session" | "payout" | "invoice" | "summary";
+
+/** Aviso do sininho. */
+export interface Notice {
+  id: string;
+  kind: NoticeKind;
+  title: string;
+  detail: string;
+  at: string;
+  read: boolean;
+  /** Tela que abre ao tocar no aviso. */
+  to: string;
+}

@@ -13,6 +13,7 @@ import type {
   LedgerSummary,
   NewChargerInput,
   NewChargerResult,
+  Notice,
   NotificationPrefs,
   Page,
   Period,
@@ -48,6 +49,7 @@ export interface EletroDashApi {
   listInvoices(): Promise<Invoice[]>;
   getAccount(): Promise<Account>;
   getNotifications(): Promise<NotificationPrefs>;
+  listNotices(): Promise<Notice[]>;
 
   // Ações
   stopSession(id: string): Promise<void>;
@@ -60,6 +62,7 @@ export interface EletroDashApi {
   updateUser(email: string, patch: Partial<Omit<TeamUser, "email">>): Promise<TeamUser>;
   removeUser(email: string): Promise<void>;
   updateNotifications(prefs: NotificationPrefs): Promise<NotificationPrefs>;
+  markNoticesRead(ids: string[]): Promise<void>;
 
   /** Só no protótipo: apaga as alterações feitas e volta aos dados de exemplo. */
   resetDemo?(): Promise<void>;

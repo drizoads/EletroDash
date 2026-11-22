@@ -360,19 +360,28 @@ export function Segmented<T extends string>({
   value,
   options,
   onChange,
+  full,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
+  /** Ocupa a largura toda, com opções do mesmo tamanho (bom no celular). */
+  full?: boolean;
 }) {
   return (
-    <div className="bg-surface-2 border-line inline-flex max-w-full overflow-x-auto rounded-full border p-0.5">
+    <div
+      className={cx(
+        "bg-surface-2 border-line max-w-full overflow-x-auto rounded-full border p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        full ? "flex w-full sm:inline-flex sm:w-auto" : "inline-flex",
+      )}
+    >
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={cx(
             "rounded-full px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-all duration-200",
+            full && "flex-1 sm:flex-none",
             value === o.value
               ? "bg-surface text-main shadow-[0_1px_2px_rgba(0,0,0,.12)]"
               : "text-muted hover:text-main",

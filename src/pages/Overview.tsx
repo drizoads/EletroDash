@@ -70,14 +70,14 @@ function Hero() {
   const live = active.data?.length ?? 0;
 
   return (
-    <section className="rise halo border-line relative mb-8 overflow-hidden rounded-3xl border">
+    <section className="rise halo border-line relative mb-6 overflow-hidden rounded-3xl border sm:mb-8">
       <span className="via-accent/50 absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent to-transparent" />
-      <div className="grid gap-6 p-5 sm:gap-8 sm:p-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+      <div className="grid gap-4 p-4 sm:gap-8 sm:p-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
         <div>
-          <div className="text-faint mb-3 min-h-4 text-[11px] font-medium tracking-[0.16em] uppercase">
+          <div className="text-faint mb-3 hidden min-h-4 text-[11px] font-medium tracking-[0.16em] uppercase sm:block">
             {account.data && `${account.data.operatorName} · Painel do proprietário`}
           </div>
-          <h1 className="text-main text-[2.1rem] leading-[1.1] font-light tracking-[-0.035em] sm:text-[2.6rem]">
+          <h1 className="text-main text-[1.6rem] leading-[1.15] font-light tracking-[-0.03em] sm:text-[2.6rem]">
             {greeting()},{" "}
             {name ? (
               <span className="text-accent font-normal">{name}.</span>
@@ -85,7 +85,7 @@ function Hero() {
               <span className="skeleton inline-block h-10 w-40 align-middle" />
             )}
           </h1>
-          <div className="text-muted mt-4 max-w-xl text-[15px] leading-relaxed">
+          <div className="text-muted mt-2 max-w-xl text-[13.5px] leading-relaxed sm:mt-4 sm:text-[15px]">
             {t ? (
               <>
                 Hoje a operação já faturou{" "}
@@ -110,8 +110,8 @@ function Hero() {
           </div>
         </div>
 
-        <div className="border-line bg-surface/70 rounded-2xl border p-5 backdrop-blur">
-          <div className="text-muted flex items-center justify-between text-[13px]">
+        <div className="border-line bg-surface/70 rounded-2xl border p-3.5 backdrop-blur sm:p-5">
+          <div className="text-muted flex items-center justify-between gap-2 text-xs sm:text-[13px]">
             <span>{monthName} até agora</span>
             {goal > 0 && (
               <span className="text-faint text-xs tabular">
@@ -119,21 +119,21 @@ function Hero() {
               </span>
             )}
           </div>
-          <div className="text-main mt-2 text-[1.9rem] leading-none font-semibold tracking-[-0.02em] tabular">
+          <div className="text-main mt-1.5 text-[1.35rem] leading-none font-semibold tracking-[-0.02em] tabular sm:mt-2 sm:text-[1.9rem]">
             {month.data ? (
               <AnimatedNumber value={mtd} format={money} />
             ) : (
               <div className="skeleton h-8 w-40" />
             )}
           </div>
-          <div className="bg-surface-2 mt-4 h-1.5 overflow-hidden rounded-full">
+          <div className="bg-surface-2 mt-3 h-1 overflow-hidden rounded-full sm:mt-4 sm:h-1.5">
             <div
               className="from-accent-soft to-accent h-full rounded-full bg-gradient-to-r transition-[width] duration-[1400ms] ease-[cubic-bezier(.22,1,.36,1)]"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <div className="text-faint mt-2 flex justify-between text-xs tabular">
-            <span>{month.data && `${kwh(month.data.energyWh, 0)} entregues`}</span>
+          <div className="text-faint mt-2 flex justify-between gap-3 text-[11px] whitespace-nowrap tabular sm:text-xs">
+            <span>{month.data && `${kwh(month.data.energyWh, 0)}`}</span>
             <span>{goal > 0 && `Mês passado ${money(goal)}`}</span>
           </div>
         </div>
@@ -238,6 +238,7 @@ export function Overview() {
           title={s?.bucket === "hour" ? "Evolução por hora" : "Evolução diária"}
           action={
             <Segmented
+              full
               value={series}
               onChange={setSeries}
               options={[
@@ -389,19 +390,24 @@ export function Overview() {
               <li key={r.id}>
                 <Link
                   to={`/recargas/${r.id}`}
-                  className="hover:bg-surface-2 -mx-2 flex items-center gap-4 rounded-lg px-2 py-2.5 text-sm transition-colors"
+                  className="hover:bg-surface-2 active:bg-surface-2 -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 text-sm transition-colors sm:gap-4 sm:py-2.5"
                 >
-                  <span className="text-faint w-[5.5rem] shrink-0 text-xs tabular sm:w-28 sm:text-sm">
+                  <span className="text-faint hidden w-28 shrink-0 tabular sm:block">
                     {dateTime(r.endAt ?? r.startAt)}
                   </span>
-                  <span className="text-main min-w-0 flex-1 truncate">
-                    {r.chargerName}
-                    <span className="text-faint"> · conector {r.connectorNumber}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="text-main block truncate font-medium sm:font-normal">
+                      {r.chargerName}
+                      <span className="text-faint font-normal"> · #{r.connectorNumber}</span>
+                    </span>
+                    <span className="text-faint block text-xs tabular sm:hidden">
+                      {dateTime(r.endAt ?? r.startAt)} · {kwh(r.energyWh)}
+                    </span>
                   </span>
                   <span className="text-muted hidden w-20 text-right tabular sm:block">
                     {kwh(r.energyWh)}
                   </span>
-                  <span className="text-main w-24 text-right font-medium tabular">
+                  <span className="text-main shrink-0 text-right font-medium tabular sm:w-24">
                     {money(r.grossCents)}
                   </span>
                   <span className="hidden md:block">

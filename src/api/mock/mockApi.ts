@@ -6,6 +6,7 @@ import type {
   ChargingSessionDetail,
   DailyPoint,
   DashboardSummary,
+  Notice,
   LedgerSummary,
   Period,
   SessionEvent,
@@ -108,6 +109,8 @@ const csvCell = (v: string | number) => {
   const s = String(v);
   return /[;"\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
 };
+const brlLabel = (c: number) =>
+  (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const brl = (c: number) => (c / 100).toFixed(2).replace(".", ",");
 
 export const mockApi: EletroDashApi = {
@@ -522,6 +525,73 @@ export const mockApi: EletroDashApi = {
     Object.assign(notifications, clone(prefs));
     persist({ notifications: clone(notifications) });
     return clone(notifications);
+  },
+
+  async listNotices() {
+    await delay(200);
+    const read = new Set(saved.readNotices ?? []);
+    const out: Omit<Notice, "read">[] = [];
+    const alerts = await mockApi.getAlerts();
+    for (const a of alerts) {
+      out.push({
+        id: a.id,
+        kind:
+          a.kind === "faulted"
+            ? "faulted"
+            : a.kind === "offline"
+              ? "offline"
+              : a.kind === "long_idle"
+                ? "idle"
+                : "invoice",
+        title: a.title,
+        detail: a.detail,
+        at: a.since,
+        to: a.chargerId ? `/carregadores/${a.chargerId}` : "/financeiro/faturas",
+      });
+    }
+    const done = history.filter((s) => s.status === "completed" && s.endAt).slice(0, 4);
+    for (const s of done) {
+      out.push({
+        id: `ntc_${s.id}`,
+        kind: "session",
+        title: `Recarga concluída · ${s.chargerName}`,
+        detail: `${(s.energyWh / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} kWh · ${brlLabel(s.grossCents)}`,
+        at: s.endAt as string,
+        to: `/recargas/${s.id}`,
+      });
+    }
+    const payout = ledger.find((e) => e.reason === "repasse");
+    if (payout) {
+      out.push({
+        id: `ntc_${payout.id}`,
+        kind: "payout",
+        title: `Repasse de ${brlLabel(-payout.amountCents)} enviado`,
+        detail: `Para ${payout.counterparty}`,
+        at: payout.at,
+        to: "/financeiro/conciliacoes",
+      });
+    }
+    const y = new Date();
+    y.setHours(0, 0, 0, 0);
+    const from = new Date(y.getTime() - 86_400_000).toISOString();
+    const yList = history.filter((s) => s.startAt >= from && s.startAt < y.toISOString());
+    const yGross = yList.reduce((a, s) => a + s.grossCents, 0);
+    out.push({
+      id: `ntc_sum_${from.slice(0, 10)}`,
+      kind: "summary",
+      title: "Resumo de ontem",
+      detail: `${brlLabel(yGross)} em ${yList.filter((s) => s.status === "completed").length} recargas`,
+      at: new Date(y.getTime() - 2 * 3_600_000).toISOString(),
+      to: "/financeiro",
+    });
+    return out
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .map((n) => ({ ...n, read: read.has(n.id) }));
+  },
+
+  async markNoticesRead(ids) {
+    await delay(100);
+    persist({ readNotices: [...new Set([...(saved.readNotices ?? []), ...ids])].slice(-300) });
   },
 
   async resetDemo() {

@@ -1,12 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import {
   BatteryCharging,
-  Bell,
   CircleDollarSign,
   FileText,
   Home,
+  LogOut,
   Menu,
   Moon,
   PlugZap,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { useApi } from "../hooks/useApi";
+import { NotificationsMenu, UserMenu } from "./HeaderMenus";
 import { QuickSearch } from "./QuickSearch";
 import { Toaster, cx } from "./ui";
 
@@ -93,6 +95,7 @@ function Sidebar({
   onNavigate?: () => void;
   workspace?: { name: string; plan: string };
 }) {
+  const { logout } = useAuth();
   return (
     <div className="flex h-full flex-col">
       <div className="px-6 pt-6 pb-5">
@@ -142,10 +145,17 @@ function Sidebar({
           </div>
         ))}
       </nav>
-      <div className="border-line text-faint border-t px-6 py-4 text-[11px] leading-relaxed">
-        Uma plataforma <span className="text-muted">EletroPay</span>
-        <br />
-        Protótipo com dados fictícios
+      <div className="border-line border-t px-4 py-3">
+        <button
+          onClick={logout}
+          className="text-muted hover:text-bad hover:bg-bad/8 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] transition-colors"
+        >
+          <LogOut className="size-[17px]" strokeWidth={1.6} />
+          Sair da conta
+        </button>
+        <div className="text-faint px-3 pt-2 text-[11px] leading-relaxed">
+          Uma plataforma <span className="text-muted">EletroPay</span> · protótipo
+        </div>
       </div>
     </div>
   );
@@ -236,7 +246,6 @@ export function Layout() {
     window.addEventListener("eletrodash:account", reloadAccount);
     return () => window.removeEventListener("eletrodash:account", reloadAccount);
   }, [reloadAccount]);
-  const alerts = useApi(() => api.getAlerts(), [], 15_000);
   const active = useApi(() => api.getActiveSessions(), [], 10_000);
   const workspace = account.data
     ? { name: account.data.operatorName, plan: account.data.plan.name }
@@ -315,12 +324,7 @@ export function Layout() {
               >
                 <Search className="size-[19px]" strokeWidth={1.6} />
               </button>
-              <Link to="/" className={iconBtn} aria-label="Alertas">
-                <Bell className="size-[19px]" strokeWidth={1.6} />
-                {!!alerts.data?.length && (
-                  <span className="bg-accent ring-app absolute top-2 right-2 size-2 rounded-full ring-2" />
-                )}
-              </Link>
+              <NotificationsMenu className={iconBtn} />
               <button
                 onClick={toggle}
                 className={cx(iconBtn, "hidden sm:grid")}
@@ -333,15 +337,11 @@ export function Layout() {
                   <Moon className="size-[18px]" strokeWidth={1.6} />
                 )}
               </button>
-              <Link to="/configuracoes" className="ml-1.5 flex items-center gap-2.5">
-                <div className="hidden text-right leading-tight sm:block">
-                  <div className="text-main text-[13px] font-medium">{owner?.name ?? "…"}</div>
-                  <div className="text-faint text-[11px]">{owner?.role ?? ""}</div>
-                </div>
-                <div className="bg-accent/15 text-accent ring-accent/40 grid size-9 place-items-center rounded-full text-sm font-semibold ring-1">
-                  {owner?.name.charAt(0) ?? ""}
-                </div>
-              </Link>
+              <UserMenu
+                name={owner?.name}
+                role={owner?.role}
+                email={account.data?.users.find((u) => u.role === "Dono")?.email}
+              />
             </div>
           </div>
           <div className="via-line h-px bg-gradient-to-r from-transparent to-transparent" />
