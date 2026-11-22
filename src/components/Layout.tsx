@@ -86,7 +86,7 @@ function Workspace({ name, plan }: { name: string; plan: string }) {
     .slice(0, 2);
   return (
     <div className="border-line bg-surface-2/60 flex items-center gap-3 rounded-xl border px-3 py-2.5">
-      <div className="ring-accent/50 text-accent bg-surface grid size-9 shrink-0 place-items-center rounded-full font-display text-[17px] ring-1">
+      <div className="ring-accent/50 text-accent bg-surface grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-semibold tracking-wide ring-1">
         {initials}
       </div>
       <div className="min-w-0 leading-tight">
@@ -284,7 +284,7 @@ export function Layout() {
                   <div className="text-main text-[13px] font-medium">{owner?.name ?? "…"}</div>
                   <div className="text-faint text-[11px]">{owner?.role ?? ""}</div>
                 </div>
-                <div className="bg-accent-strong text-on-accent grid size-9 place-items-center rounded-full font-display text-base">
+                <div className="bg-accent/15 text-accent ring-accent/40 grid size-9 place-items-center rounded-full text-sm font-semibold ring-1">
                   {owner?.name.charAt(0) ?? ""}
                 </div>
               </div>
