@@ -12,6 +12,7 @@ import {
   Td,
   Th,
   stagger,
+  MobileRow,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { delta, int, kwh, money } from "../lib/format";
@@ -42,7 +43,7 @@ export function Finance() {
           />
         }
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           featured
           style={stagger(1)}
@@ -96,7 +97,30 @@ export function Finance() {
         {!s ? (
           <Loading />
         ) : (
-          <Table>
+          <Table
+            mobile={[...s.daily].reverse().map((d) => (
+              <MobileRow
+                key={d.date}
+                title={
+                  <span className="capitalize">
+                    {new Date(d.date).toLocaleDateString("pt-BR", {
+                      weekday: "short",
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </span>
+                }
+                subtitle={`${int(d.sessions)} recargas · ${kwh(d.energyWh)}`}
+                right={money(d.grossCents)}
+                rightSub={
+                  <span className="text-faint text-xs">
+                    Pix {money(d.pixCents)}
+                    {d.cardCents > 0 && ` · Cartão ${money(d.cardCents)}`}
+                  </span>
+                }
+              />
+            ))}
+          >
             <thead>
               <tr>
                 <Th>Dia</Th>

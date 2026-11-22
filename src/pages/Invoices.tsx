@@ -11,6 +11,7 @@ import {
   Td,
   Th,
   toast,
+  MobileRow,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { date, money } from "../lib/format";
@@ -86,7 +87,17 @@ export function Invoices() {
         {!invoices.data ? (
           <Loading />
         ) : (
-          <Table>
+          <Table
+            mobile={invoices.data.map((i) => (
+              <MobileRow
+                key={i.id}
+                title={<span className="capitalize">{monthName(i.referenceMonth)}</span>}
+                subtitle={`${i.activeChargers} carregadores · vence ${date(i.dueDate)}`}
+                right={money(i.totalCents)}
+                rightSub={<Badge tone={STATUS[i.status].tone}>{STATUS[i.status].label}</Badge>}
+              />
+            ))}
+          >
             <thead>
               <tr>
                 <Th>Mês</Th>

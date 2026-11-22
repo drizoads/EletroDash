@@ -69,12 +69,17 @@ export function Card({
       className={cx("rise bg-surface border-line rounded-2xl border", className)}
     >
       {(title || action) && (
-        <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-2">
+        <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 pt-4 pb-2 sm:px-5">
           <h2 className="text-main text-sm font-medium">{title}</h2>
           {action}
         </header>
       )}
-      <div className={cx(padded && "px-5 pb-5", padded && !title && !action && "pt-5")}>
+      <div
+        className={cx(
+          padded && "px-4 pb-4 sm:px-5 sm:pb-5",
+          padded && !title && !action && "pt-4 sm:pt-5",
+        )}
+      >
         {children}
       </div>
     </section>
@@ -212,7 +217,7 @@ export function StatCard({
       onClick={onClick}
       style={style}
       className={cx(
-        "rise group bg-surface border-line relative flex flex-col overflow-hidden rounded-2xl border p-5 text-left transition-[border-color,transform] duration-300",
+        "rise group bg-surface border-line relative flex min-w-0 flex-col overflow-hidden rounded-2xl border p-4 text-left transition-[border-color,transform] duration-300 sm:p-5",
         onClick && "hover:border-accent/40 cursor-pointer hover:-translate-y-0.5",
         featured && "halo",
       )}
@@ -220,15 +225,19 @@ export function StatCard({
       {featured && (
         <span className="via-accent/60 absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent" />
       )}
-      <div className="text-muted flex items-center justify-between text-[13px]">
-        <span className="flex items-center gap-2">
-          <span className={cx(featured ? "text-accent" : "text-faint")}>{icon}</span>
-          {label}
+      <div className="text-muted flex items-center justify-between gap-2 text-[12.5px] sm:text-[13px]">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className={cx("shrink-0", featured ? "text-accent" : "text-faint")}>{icon}</span>
+          <span className="truncate">{label}</span>
         </span>
-        {value !== undefined && delta !== undefined && <DeltaTag value={delta} />}
+        {value !== undefined && delta !== undefined && (
+          <span className="hidden sm:inline-flex">
+            <DeltaTag value={delta} />
+          </span>
+        )}
       </div>
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="text-main text-[1.75rem] leading-none whitespace-nowrap font-semibold tracking-[-0.02em] tabular">
+      <div className="mt-2.5 flex items-end justify-between gap-3 sm:mt-3">
+        <div className="text-main text-[1.22rem] leading-none font-semibold tracking-[-0.02em] whitespace-nowrap tabular min-[400px]:text-[1.35rem] sm:text-[1.75rem]">
           {value === undefined ? (
             <div className="skeleton h-7 w-36" />
           ) : (
@@ -236,11 +245,30 @@ export function StatCard({
           )}
         </div>
         {spark && value !== undefined && (
-          <Sparkline values={spark} className="h-8 w-full max-w-24 min-w-10 opacity-90" />
+          <Sparkline
+            values={spark}
+            className="hidden h-8 w-full max-w-24 min-w-10 opacity-90 sm:block"
+          />
         )}
       </div>
-      <div className="text-faint mt-3 min-h-4 text-xs tabular">
-        {value === undefined ? <div className="skeleton h-3 w-28" /> : hint}
+      {spark && value !== undefined && (
+        <Sparkline values={spark} className="mt-3 h-7 w-full opacity-90 sm:hidden" />
+      )}
+      <div className="text-faint mt-2.5 flex min-h-4 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs tabular sm:mt-3 sm:flex-nowrap">
+        {value === undefined ? (
+          <div className="skeleton h-3 w-28" />
+        ) : (
+          <>
+            {delta !== undefined && (
+              <span className="shrink-0 sm:hidden">
+                <DeltaTag value={delta} />
+              </span>
+            )}
+            <span className="min-w-0 basis-full text-[11px] leading-snug sm:basis-auto sm:truncate sm:text-xs">
+              {hint}
+            </span>
+          </>
+        )}
       </div>
     </Tag>
   );
@@ -389,6 +417,7 @@ export function Button({
   disabled,
   type = "button",
   title,
+  className,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -396,6 +425,7 @@ export function Button({
   disabled?: boolean;
   type?: "button" | "submit";
   title?: string;
+  className?: string;
 }) {
   return (
     <button
@@ -410,6 +440,7 @@ export function Button({
         variant === "secondary" && "bg-surface border-line text-main hover:bg-surface-2 border",
         variant === "danger" && "border-bad/30 bg-bad/10 text-bad hover:bg-bad/20 border",
         variant === "ghost" && "text-muted hover:text-main hover:bg-surface-2",
+        className,
       )}
     >
       {children}
@@ -456,11 +487,18 @@ export function Empty({ children }: { children: ReactNode }) {
   );
 }
 
-export function Table({ children }: { children: ReactNode }) {
+/**
+ * Tabela no computador. Com `mobile`, o celular mostra essa lista no lugar
+ * (tabela larga no celular vira rolagem lateral, que fica ruim de usar).
+ */
+export function Table({ children, mobile }: { children: ReactNode; mobile?: ReactNode }) {
   return (
-    <div className="-mx-5 overflow-x-auto">
-      <table className="w-full min-w-max text-sm">{children}</table>
-    </div>
+    <>
+      {mobile && <div className="divide-line divide-y sm:hidden">{mobile}</div>}
+      <div className={cx("-mx-5 overflow-x-auto", mobile ? "hidden sm:block" : "")}>
+        <table className="w-full min-w-max text-sm">{children}</table>
+      </div>
+    </>
   );
 }
 
@@ -587,7 +625,7 @@ export function Modal({
           wide ? "sm:max-w-2xl" : "sm:max-w-lg",
         )}
       >
-        <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">
+        <header className="flex items-start justify-between gap-4 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
           <div>
             <h2 className="text-main text-lg font-semibold tracking-[-0.01em]">{title}</h2>
             {subtitle && <p className="text-muted mt-1 text-sm">{subtitle}</p>}
@@ -600,9 +638,9 @@ export function Modal({
             ✕
           </button>
         </header>
-        <div className="overflow-y-auto px-6 pb-6">{children}</div>
+        <div className="overflow-y-auto px-5 pb-6 sm:px-6">{children}</div>
         {footer && (
-          <footer className="border-line flex justify-end gap-2 border-t px-6 py-4">
+          <footer className="border-line flex justify-end gap-2 border-t px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
             {footer}
           </footer>
         )}
@@ -708,7 +746,7 @@ export function Toaster() {
     };
   }, []);
   return (
-    <div className="pointer-events-none fixed right-4 bottom-4 z-[60] flex flex-col gap-2 sm:right-6 sm:bottom-6">
+    <div className="pointer-events-none fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[60] flex flex-col items-center gap-2 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:items-end">
       {items.map((t) => (
         <div
           key={t.id}
@@ -719,5 +757,42 @@ export function Toaster() {
         </div>
       ))}
     </div>
+  );
+}
+
+/** Linha de lista usada no celular no lugar das tabelas. */
+export function MobileRow({
+  title,
+  subtitle,
+  right,
+  rightSub,
+  leading,
+  onClick,
+}: {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  right?: ReactNode;
+  rightSub?: ReactNode;
+  leading?: ReactNode;
+  onClick?: () => void;
+}) {
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      onClick={onClick}
+      className="active:bg-surface-2 -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-xl px-2 py-3 text-left transition-colors"
+    >
+      {leading}
+      <div className="min-w-0 flex-1">
+        <div className="text-main truncate text-[14px] font-medium">{title}</div>
+        {subtitle && <div className="text-faint mt-0.5 truncate text-xs">{subtitle}</div>}
+      </div>
+      {(right || rightSub) && (
+        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+          {right && <div className="text-main text-sm font-medium tabular">{right}</div>}
+          {rightSub}
+        </div>
+      )}
+    </Tag>
   );
 }

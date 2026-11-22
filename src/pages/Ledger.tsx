@@ -14,6 +14,7 @@ import {
   Td,
   Th,
   cx,
+  MobileRow,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { dateTime, int, money } from "../lib/format";
@@ -91,7 +92,7 @@ export function Ledger() {
       </div>
 
       <Card>
-        <div className="mb-4 flex flex-wrap gap-3">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
           <Select
             label="Período"
             value={preset}
@@ -131,7 +132,22 @@ export function Ledger() {
           <Empty>Nenhum lançamento com esses filtros.</Empty>
         ) : (
           <>
-            <Table>
+            <Table
+              mobile={res.data.page.items.map((e) => (
+                <MobileRow
+                  key={e.id}
+                  title={e.description}
+                  subtitle={`${dateTime(e.at)} · ${e.account === "pix" ? "Pix" : "Cartão"}`}
+                  right={
+                    <span className={e.amountCents >= 0 ? "text-ok" : "text-bad"}>
+                      {e.amountCents >= 0 ? "+ " : "− "}
+                      {money(Math.abs(e.amountCents))}
+                    </span>
+                  }
+                  rightSub={<Badge tone={REASON[e.reason].tone}>{REASON[e.reason].label}</Badge>}
+                />
+              ))}
+            >
               <thead>
                 <tr>
                   <Th>Data</Th>

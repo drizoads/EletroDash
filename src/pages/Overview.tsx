@@ -72,7 +72,7 @@ function Hero() {
   return (
     <section className="rise halo border-line relative mb-8 overflow-hidden rounded-3xl border">
       <span className="via-accent/50 absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent to-transparent" />
-      <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+      <div className="grid gap-6 p-5 sm:gap-8 sm:p-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
         <div>
           <div className="text-faint mb-3 min-h-4 text-[11px] font-medium tracking-[0.16em] uppercase">
             {account.data && `${account.data.operatorName} · Painel do proprietário`}
@@ -184,7 +184,7 @@ export function Overview() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           featured
           style={stagger(3)}
@@ -391,7 +391,7 @@ export function Overview() {
                   to={`/recargas/${r.id}`}
                   className="hover:bg-surface-2 -mx-2 flex items-center gap-4 rounded-lg px-2 py-2.5 text-sm transition-colors"
                 >
-                  <span className="text-faint w-28 shrink-0 tabular">
+                  <span className="text-faint w-[5.5rem] shrink-0 text-xs tabular sm:w-28 sm:text-sm">
                     {dateTime(r.endAt ?? r.startAt)}
                   </span>
                   <span className="text-main min-w-0 flex-1 truncate">

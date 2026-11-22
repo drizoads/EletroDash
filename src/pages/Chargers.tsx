@@ -16,6 +16,7 @@ import {
   Table,
   Td,
   Th,
+  MobileRow,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { pricePerKwh, since } from "../lib/format";
@@ -62,7 +63,7 @@ export function Chargers() {
         onCreated={chargers.reload}
       />
       <Card>
-        <div className="mb-4 flex flex-wrap gap-3">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
           <Select label="Status do conector" value={status} onChange={(v) => set("status", v)}>
             <option value="">Todos</option>
             {(Object.keys(CONNECTOR_STATUS) as ConnectorStatus[]).map((s) => (
@@ -82,7 +83,51 @@ export function Chargers() {
         ) : rows.length === 0 ? (
           <Empty>Nenhum carregador com esses filtros.</Empty>
         ) : (
-          <Table>
+          <Table
+            mobile={rows.map((c) => {
+              const order: ConnectorStatus[] = [
+                "faulted",
+                "offline",
+                "charging",
+                "occupied",
+                "available",
+              ];
+              const main =
+                order.find((st) => c.connectors.some((con) => con.status === st)) ?? "available";
+              const free = c.connectors.filter((con) => con.status === "available").length;
+              return (
+                <Link key={c.id} to={`/carregadores/${c.id}`} className="block">
+                  <MobileRow
+                    leading={
+                      <span className="bg-surface-2 text-muted grid size-10 shrink-0 place-items-center rounded-xl">
+                        {c.visibility === "public" ? (
+                          <Globe className="size-4" strokeWidth={1.6} />
+                        ) : (
+                          <Lock className="size-4" strokeWidth={1.6} />
+                        )}
+                      </span>
+                    }
+                    title={c.name}
+                    subtitle={`${c.maxKw} kW · ${pricePerKwh(c.priceKwhCents)}`}
+                    rightSub={
+                      c.pendingBoot ? (
+                        <Badge tone="violet" dot>
+                          Aguardando
+                        </Badge>
+                      ) : (
+                        <ConnectorBadge status={main} />
+                      )
+                    }
+                    right={
+                      <span className="text-faint text-xs font-normal">
+                        {free}/{c.connectors.length} livres
+                      </span>
+                    }
+                  />
+                </Link>
+              );
+            })}
+          >
             <thead>
               <tr>
                 <Th>Carregador</Th>

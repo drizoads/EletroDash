@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { useApi } from "../hooks/useApi";
-import { Toaster, cx, toast } from "./ui";
+import { QuickSearch } from "./QuickSearch";
+import { Toaster, cx } from "./ui";
 
 interface NavItem {
   to: string;
@@ -159,11 +160,75 @@ const todayLabel = () => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
+const TABBAR: { to: string; label: string; icon: ReactNode; end?: boolean }[] = [
+  { to: "/", label: "Início", icon: <Home {...ICON} />, end: true },
+  { to: "/carregadores", label: "Carregadores", icon: <PlugZap {...ICON} /> },
+  { to: "/recargas", label: "Recargas", icon: <BatteryCharging {...ICON} /> },
+  { to: "/financeiro", label: "Financeiro", icon: <CircleDollarSign {...ICON} /> },
+];
+
+/** Barra de abas fixa no rodapé, só no celular. */
+function TabBar({ onMore }: { onMore: () => void }) {
+  const { pathname } = useLocation();
+  const moreActive = pathname.startsWith("/precos") || pathname.startsWith("/configuracoes");
+  const isOn = (to: string) =>
+    to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
+  const item =
+    "flex flex-1 flex-col items-center justify-center gap-1 pt-2 pb-1.5 text-[10.5px] font-medium transition-colors";
+  return (
+    <nav className="bg-surface/85 border-line fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+      <div className="mx-auto flex max-w-md">
+        {TABBAR.map((t) => (
+          <Link
+            key={t.to}
+            to={t.to}
+            className={cx(item, isOn(t.to) ? "text-accent" : "text-faint")}
+          >
+            <span
+              className={cx(
+                "grid h-7 w-12 place-items-center rounded-full transition-colors duration-300",
+                isOn(t.to) && "bg-accent/14",
+              )}
+            >
+              {t.icon}
+            </span>
+            {t.label}
+          </Link>
+        ))}
+        <button onClick={onMore} className={cx(item, moreActive ? "text-accent" : "text-faint")}>
+          <span
+            className={cx(
+              "grid h-7 w-12 place-items-center rounded-full",
+              moreActive && "bg-accent/14",
+            )}
+          >
+            <Menu {...ICON} />
+          </span>
+          Mais
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export function Layout() {
   const { dark, toggle } = useTheme();
   const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const location = useLocation();
-  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => setOpen(false), [location.pathname, location.search]);
+
+  // Ctrl+K (ou Cmd+K) abre a busca de qualquer tela.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearching(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const account = useApi(() => api.getAccount(), []);
   const reloadAccount = account.reload;
@@ -179,6 +244,9 @@ export function Layout() {
   const owner = account.data?.owner;
   const liveCount = active.data?.length ?? 0;
 
+  const iconBtn =
+    "text-muted hover:text-main hover:bg-surface relative grid size-10 place-items-center rounded-full transition-colors sm:size-9";
+
   return (
     <div className="bg-app min-h-screen">
       <aside className="bg-surface border-line fixed inset-y-0 left-0 hidden w-64 border-r lg:block">
@@ -188,10 +256,10 @@ export function Layout() {
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="fade-in absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <aside className="rise bg-surface border-line absolute inset-y-0 left-0 w-72 border-r">
+          <aside className="slide-in bg-surface border-line absolute inset-y-0 left-0 w-[82%] max-w-80 border-r pb-[env(safe-area-inset-bottom)]">
             <button
               onClick={() => setOpen(false)}
               className="text-muted absolute top-5 right-4"
@@ -205,17 +273,10 @@ export function Layout() {
       )}
 
       <div className="lg:pl-64">
-        <header className="bg-app/75 sticky top-0 z-30 backdrop-blur-xl">
-          <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-4 sm:px-8">
-            <button
-              className="text-muted -ml-1 lg:hidden"
-              onClick={() => setOpen(true)}
-              aria-label="Abrir menu"
-            >
-              <Menu className="size-5" />
-            </button>
+        <header className="bg-app/80 sticky top-0 z-30 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+          <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:h-16 sm:px-8">
             <Link to="/" className="lg:hidden">
-              <Wordmark className="text-[17px]" />
+              <Wordmark className="text-[18px]" />
             </Link>
 
             <div className="hidden items-center gap-3 lg:flex">
@@ -236,10 +297,10 @@ export function Layout() {
               </Link>
             </div>
 
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5">
               <button
                 className="border-line bg-surface text-faint hover:text-muted hidden h-9 w-64 items-center gap-2 rounded-full border px-3.5 text-[13px] transition-colors md:flex"
-                onClick={() => toast("Busca rápida chega na próxima versão")}
+                onClick={() => setSearching(true)}
               >
                 <Search className="size-4" strokeWidth={1.6} />
                 Buscar…
@@ -247,20 +308,22 @@ export function Layout() {
                   Ctrl K
                 </kbd>
               </button>
-              <Link
-                to="/"
-                className="text-muted hover:text-main hover:bg-surface relative grid size-9 place-items-center rounded-full transition-colors"
-                aria-label="Alertas"
-                title={`${alerts.data?.length ?? 0} alertas`}
+              <button
+                className={cx(iconBtn, "md:hidden")}
+                onClick={() => setSearching(true)}
+                aria-label="Buscar"
               >
-                <Bell className="size-[18px]" strokeWidth={1.6} />
+                <Search className="size-[19px]" strokeWidth={1.6} />
+              </button>
+              <Link to="/" className={iconBtn} aria-label="Alertas">
+                <Bell className="size-[19px]" strokeWidth={1.6} />
                 {!!alerts.data?.length && (
-                  <span className="bg-accent ring-app absolute top-1.5 right-1.5 size-2 rounded-full ring-2" />
+                  <span className="bg-accent ring-app absolute top-2 right-2 size-2 rounded-full ring-2" />
                 )}
               </Link>
               <button
                 onClick={toggle}
-                className="text-muted hover:text-main hover:bg-surface grid size-9 place-items-center rounded-full transition-colors"
+                className={cx(iconBtn, "hidden sm:grid")}
                 aria-label={dark ? "Usar tema claro" : "Usar tema escuro"}
                 title={dark ? "Tema claro" : "Tema escuro"}
               >
@@ -270,7 +333,7 @@ export function Layout() {
                   <Moon className="size-[18px]" strokeWidth={1.6} />
                 )}
               </button>
-              <div className="ml-1.5 flex items-center gap-2.5">
+              <Link to="/configuracoes" className="ml-1.5 flex items-center gap-2.5">
                 <div className="hidden text-right leading-tight sm:block">
                   <div className="text-main text-[13px] font-medium">{owner?.name ?? "…"}</div>
                   <div className="text-faint text-[11px]">{owner?.role ?? ""}</div>
@@ -278,15 +341,17 @@ export function Layout() {
                 <div className="bg-accent/15 text-accent ring-accent/40 grid size-9 place-items-center rounded-full text-sm font-semibold ring-1">
                   {owner?.name.charAt(0) ?? ""}
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
           <div className="via-line h-px bg-gradient-to-r from-transparent to-transparent" />
         </header>
-        <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-8 lg:py-10">
+        <main className="mx-auto max-w-[1400px] px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-8 sm:pt-8 lg:py-10">
           <Outlet />
         </main>
       </div>
+      <TabBar onMore={() => setOpen(true)} />
+      <QuickSearch open={searching} onClose={() => setSearching(false)} />
       <Toaster />
     </div>
   );

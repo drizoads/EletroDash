@@ -16,6 +16,7 @@ import {
   Table,
   Td,
   Th,
+  MobileRow,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { dateTime, duration, kwh, minutesBetween, money } from "../lib/format";
@@ -75,7 +76,7 @@ export function Sessions() {
         }
       />
       <Card>
-        <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
           <Select label="Período" value={preset} onChange={(v) => set("periodo", v)}>
             {(Object.keys(PRESET_LABEL) as PeriodPreset[]).map((p) => (
               <option key={p} value={p}>
@@ -108,7 +109,7 @@ export function Sessions() {
               </option>
             ))}
           </Select>
-          <label className="flex min-w-48 flex-1 flex-col gap-1">
+          <label className="col-span-2 flex min-w-48 flex-1 flex-col gap-1">
             <span className="text-faint text-xs font-medium">Buscar</span>
             <div className="bg-surface border-line focus-within:ring-accent/40 flex h-9 items-center gap-2 rounded-lg border px-2.5 focus-within:ring-2">
               <Search className="text-faint size-4" />
@@ -131,7 +132,23 @@ export function Sessions() {
           <Empty>Nenhuma recarga com esses filtros.</Empty>
         ) : (
           <>
-            <Table>
+            <Table
+              mobile={page.data.items.map((s) => (
+                <Link key={s.id} to={`/recargas/${s.id}`} className="block">
+                  <MobileRow
+                    title={
+                      <>
+                        {s.chargerName}
+                        <span className="text-faint font-normal"> #{s.connectorNumber}</span>
+                      </>
+                    }
+                    subtitle={`${dateTime(s.startAt)} · ${kwh(s.energyWh)} · ${METHOD_LABEL[s.method]}`}
+                    right={money(s.grossCents)}
+                    rightSub={<SessionBadge status={s.status} />}
+                  />
+                </Link>
+              ))}
+            >
               <thead>
                 <tr>
                   <Th>Início</Th>

@@ -40,17 +40,20 @@ export function ActiveSessionsList({
         const limitWh = (s.prepaidCents / s.priceKwhCents) * 1000;
         const pct = Math.min(100, (s.energyWh / limitWh) * 100);
         return (
-          <li key={s.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
+          <li
+            key={s.id}
+            className="relative flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center"
+          >
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="live-dot size-2 rounded-full bg-info" />
+              <div className="flex items-center gap-2 pr-24 sm:pr-0">
+                <span className="live-dot bg-info size-2 shrink-0 rounded-full" />
                 <Link
                   to={`/recargas/${s.id}`}
                   className="text-main truncate text-sm font-medium hover:underline"
                 >
                   {s.chargerName}
                 </Link>
-                <span className="text-faint text-xs">conector {s.connectorNumber}</span>
+                <span className="text-faint shrink-0 text-xs">#{s.connectorNumber}</span>
               </div>
               <div className="mt-2 flex items-center gap-3">
                 <div className="bg-surface-2 h-1.5 flex-1 overflow-hidden rounded-full">
@@ -64,7 +67,9 @@ export function ActiveSessionsList({
                 </span>
               </div>
             </div>
-            <div className="text-muted grid grid-cols-4 gap-4 text-xs tabular sm:flex sm:items-center">
+            <div
+              className={`text-muted grid gap-3 text-xs tabular sm:flex sm:items-center sm:gap-4 ${compact ? "grid-cols-3" : "grid-cols-4"}`}
+            >
               <div>
                 <div className="text-faint">Potência</div>
                 <div className="text-main font-medium">{kw(s.powerW ?? 0)}</div>
@@ -87,7 +92,12 @@ export function ActiveSessionsList({
                 </div>
               )}
             </div>
-            <Button variant="danger" onClick={() => stop(s)} disabled={stopping === s.id}>
+            <Button
+              variant="danger"
+              onClick={() => stop(s)}
+              disabled={stopping === s.id}
+              className="absolute top-2 right-0 h-7 px-3 text-xs sm:static sm:h-9 sm:px-4 sm:text-sm"
+            >
               <Square className="size-3.5" fill="currentColor" />
               {stopping === s.id ? "Parando…" : "Parar"}
             </Button>

@@ -18,6 +18,7 @@ import {
   Td,
   Th,
   toast,
+  MobileRow,
 } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { dateTime, kwh, money, pricePerKwh, since } from "../lib/format";
@@ -130,7 +131,18 @@ export function ChargerDetail() {
           {!sessions.data ? (
             <Loading />
           ) : (
-            <Table>
+            <Table
+              mobile={sessions.data.items.map((s) => (
+                <Link key={s.id} to={`/recargas/${s.id}`} className="block">
+                  <MobileRow
+                    title={dateTime(s.startAt)}
+                    subtitle={`Conector ${s.connectorNumber} · ${kwh(s.energyWh)} · ${s.driverLabel}`}
+                    right={money(s.grossCents)}
+                    rightSub={<SessionBadge status={s.status} />}
+                  />
+                </Link>
+              ))}
+            >
               <thead>
                 <tr>
                   <Th>Início</Th>

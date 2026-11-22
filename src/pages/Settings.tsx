@@ -277,7 +277,54 @@ function TeamTab({ account, onChange }: { account: Account; onChange: () => void
       <p className="text-faint mb-2 text-sm">
         Cada pessoa entra com o próprio e-mail e só vê o que o perfil permite.
       </p>
-      <Table>
+      <Table
+        mobile={account.users.map((u) => {
+          const isSelf = u.name === self && u.role === "Dono";
+          return (
+            <div key={u.email} className="py-3.5">
+              <div className="flex items-center gap-3">
+                <div className="bg-accent/12 text-accent grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold">
+                  {u.name.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-main truncate text-sm font-medium">
+                    {u.name}{" "}
+                    {isSelf && <span className="text-faint text-xs font-normal">(você)</span>}
+                  </div>
+                  <div className="text-faint truncate text-xs">{u.email}</div>
+                </div>
+                {isSelf ? (
+                  <Badge tone="green">Dono</Badge>
+                ) : (
+                  <button
+                    onClick={() => remove(u.email, u.name)}
+                    className="text-faint hover:text-bad grid size-9 place-items-center rounded-lg"
+                    aria-label={`Remover ${u.name}`}
+                  >
+                    <Trash2 className="size-4" strokeWidth={1.6} />
+                  </button>
+                )}
+              </div>
+              {!isSelf && (
+                <div className="mt-3 flex items-center gap-3 pl-12">
+                  <SelectInput
+                    className="h-9 flex-1"
+                    value={u.role}
+                    onChange={(e) => update(u.email, { role: e.target.value as TeamRole })}
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </SelectInput>
+                  <Toggle checked={u.active} onChange={(v) => update(u.email, { active: v })} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      >
         <thead>
           <tr>
             <Th>Pessoa</Th>
