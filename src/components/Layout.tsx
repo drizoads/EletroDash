@@ -7,6 +7,8 @@ import {
   CircleDollarSign,
   FileText,
   Home,
+  PanelLeftClose,
+  PanelLeftOpen,
   LogOut,
   Menu,
   Moon,
@@ -225,15 +227,37 @@ export function Layout() {
   const { dark, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);
+  // Menu lateral oculto no computador (lembrado no navegador).
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem("eletrodash-sidebar") === "hidden";
+    } catch {
+      return false;
+    }
+  });
+  const toggleSidebar = () =>
+    setHidden((h) => {
+      try {
+        localStorage.setItem("eletrodash-sidebar", h ? "shown" : "hidden");
+      } catch {
+        /* sem armazenamento: só não lembra */
+      }
+      return !h;
+    });
   const location = useLocation();
   useEffect(() => setOpen(false), [location.pathname, location.search]);
 
-  // Ctrl+K (ou Cmd+K) abre a busca de qualquer tela.
+  // Ctrl+K abre a busca; Ctrl+B mostra/oculta o menu lateral.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "k") {
         e.preventDefault();
         setSearching(true);
+      } else if (k === "b") {
+        e.preventDefault();
+        toggleSidebar();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -258,7 +282,13 @@ export function Layout() {
 
   return (
     <div className="bg-app min-h-screen">
-      <aside className="bg-surface border-line fixed inset-y-0 left-0 hidden w-64 border-r lg:block">
+      <aside
+        className={cx(
+          "bg-surface border-line fixed inset-y-0 left-0 hidden w-64 border-r transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:block",
+          hidden && "-translate-x-full",
+        )}
+        aria-hidden={hidden}
+      >
         <Sidebar workspace={workspace} />
       </aside>
 
@@ -281,10 +311,27 @@ export function Layout() {
         </div>
       )}
 
-      <div className="lg:pl-64">
+      <div
+        className={cx(
+          "transition-[padding] duration-300 ease-[cubic-bezier(.22,1,.36,1)]",
+          hidden ? "lg:pl-0" : "lg:pl-64",
+        )}
+      >
         <header className="bg-app/80 sticky top-0 z-30 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
           <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:h-16 sm:px-8">
-            <Link to="/" className="lg:hidden">
+            <button
+              onClick={toggleSidebar}
+              className="text-muted hover:text-main hover:bg-surface -ml-2 hidden size-9 place-items-center rounded-full transition-colors lg:grid"
+              aria-label={hidden ? "Mostrar menu lateral" : "Ocultar menu lateral"}
+              title={`${hidden ? "Mostrar" : "Ocultar"} menu (Ctrl+B)`}
+            >
+              {hidden ? (
+                <PanelLeftOpen className="size-[18px]" strokeWidth={1.6} />
+              ) : (
+                <PanelLeftClose className="size-[18px]" strokeWidth={1.6} />
+              )}
+            </button>
+            <Link to="/" className={hidden ? "" : "lg:hidden"}>
               <Wordmark className="text-[18px]" />
             </Link>
 
