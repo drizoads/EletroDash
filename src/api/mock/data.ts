@@ -359,7 +359,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: CREDIT_OPTIONS_CENTS,
     version: 2,
     validFrom: iso(GENERATED_AT - 30 * DAY),
-    createdBy: "Arthur",
+    createdBy: "Drizo",
   },
   {
     id: "tar_dc40",
@@ -372,7 +372,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: CREDIT_OPTIONS_CENTS,
     version: 2,
     validFrom: iso(GENERATED_AT - 30 * DAY),
-    createdBy: "Arthur",
+    createdBy: "Drizo",
   },
   {
     id: "tar_ac",
@@ -385,7 +385,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: CREDIT_OPTIONS_CENTS,
     version: 1,
     validFrom: iso(GENERATED_AT - 75 * DAY),
-    createdBy: "Arthur",
+    createdBy: "Drizo",
   },
   {
     id: "tar_cond",
@@ -398,7 +398,7 @@ export const tariffs: Tariff[] = [
     creditOptionsCents: [],
     version: 1,
     validFrom: iso(GENERATED_AT - 75 * DAY),
-    createdBy: "Arthur",
+    createdBy: "Drizo",
   },
 ];
 
@@ -521,14 +521,14 @@ export const account: Account = {
   asaasStatus: "approved",
   pixKeyMasked: "CNPJ ••.•••.678/0001-90",
   plan: PLAN,
-  owner: { name: "Arthur", role: "Dono · Inova Solar" },
+  owner: { name: "Drizo", role: "Dono · Inova Solar" },
   contactEmail: "contato@inovasolar.exemplo",
   supportWhatsapp: "(69) 99999-0000",
   address: "Av. Brasil, 1200 · Centro",
   city: "Ji-Paraná · RO",
   bankAccountMasked: "Itaú · ag. 0001 · cc ••••4821-0",
   users: [
-    { name: "Arthur", email: "arthur@inovasolar.exemplo", role: "Dono", active: true },
+    { name: "Drizo", email: "arthur@inovasolar.exemplo", role: "Dono", active: true },
     {
       name: "Financeiro",
       email: "financeiro@inovasolar.exemplo",
@@ -567,4 +567,13 @@ for (const [id, patch] of Object.entries(saved.chargerPatches ?? {})) {
 }
 for (const c of saved.addedChargers ?? []) chargers.push(structuredClone(c));
 if (saved.tariffs) tariffs.splice(0, tariffs.length, ...structuredClone(saved.tariffs));
-if (saved.account) Object.assign(account, structuredClone(saved.account));
+if (saved.account) {
+  // O dono e o plano vêm sempre do código (não são editáveis no painel), então
+  // mudar o nome aqui no arquivo vale mesmo com alterações salvas no navegador.
+  const owner = account.owner;
+  const plan = account.plan;
+  const ownerUser = account.users.find((u) => u.role === "Dono");
+  Object.assign(account, structuredClone(saved.account), { owner, plan });
+  const savedOwner = account.users.find((u) => u.role === "Dono");
+  if (savedOwner && ownerUser) savedOwner.name = ownerUser.name;
+}
