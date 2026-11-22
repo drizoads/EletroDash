@@ -9,6 +9,7 @@ import {
   CONNECTOR_STATUS,
   Card,
   ConnectorBadge,
+  ConnectorLine,
   Empty,
   Loading,
   PageHeader,
@@ -166,14 +167,14 @@ export function Chargers() {
                       {c.maxKw} kW
                     </Td>
                     <Td>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col">
                         {c.connectors.map((con) => (
-                          <div key={con.id} className="flex items-center gap-2">
-                            <span className="text-faint w-16 text-xs">
-                              #{con.number} {con.type}
-                            </span>
-                            <ConnectorBadge status={con.status} />
-                          </div>
+                          <ConnectorLine
+                            key={con.id}
+                            number={con.number}
+                            type={con.type}
+                            status={con.status}
+                          />
                         ))}
                       </div>
                     </Td>

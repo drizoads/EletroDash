@@ -298,11 +298,10 @@ export function Badge({
   const c = TONE_VAR[tone];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+      className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium whitespace-nowrap"
       style={{
         color: c,
-        backgroundColor: `color-mix(in oklab, ${c} 13%, transparent)`,
-        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${c} 22%, transparent)`,
+        backgroundColor: `color-mix(in oklab, ${c} 9%, transparent)`,
       }}
     >
       <span
@@ -803,5 +802,33 @@ export function MobileRow({
         </div>
       )}
     </Tag>
+  );
+}
+
+/** Conector em uma linha leve: ponto de status, número, tipo e status em texto. */
+export function ConnectorLine({
+  number,
+  type,
+  status,
+}: {
+  number: number;
+  type: string;
+  status: ConnectorStatus;
+}) {
+  const s = CONNECTOR_STATUS[status];
+  const c = TONE_VAR[s.tone];
+  return (
+    <div className="flex items-center gap-2 text-[13px] leading-6 whitespace-nowrap">
+      <span className="relative flex size-2 shrink-0">
+        {status === "charging" && (
+          <span className="live-ring absolute inset-0 rounded-full" style={{ background: c }} />
+        )}
+        <span className="relative size-2 rounded-full" style={{ background: c }} />
+      </span>
+      <span className="text-faint tabular">#{number}</span>
+      <span className="text-muted">{type}</span>
+      <span className="text-faint">·</span>
+      <span style={{ color: c }}>{s.label}</span>
+    </div>
   );
 }
