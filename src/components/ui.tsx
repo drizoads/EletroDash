@@ -290,22 +290,29 @@ export function Badge({
   tone = "gray",
   children,
   dot,
+  small,
 }: {
   tone?: Tone;
   children: ReactNode;
   dot?: boolean;
+  /** Versão compacta, para listas densas. */
+  small?: boolean;
 }) {
   const c = TONE_VAR[tone];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium whitespace-nowrap"
+      className={cx(
+        "inline-flex items-center rounded-full font-medium whitespace-nowrap",
+        small ? "gap-1 px-1.5 py-[3px] text-[10.5px] leading-none" : "gap-1.5 px-2 py-0.5 text-xs",
+      )}
       style={{
         color: c,
-        backgroundColor: `color-mix(in oklab, ${c} 9%, transparent)`,
+        backgroundColor: `color-mix(in oklab, ${c} 13%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${c} 22%, transparent)`,
       }}
     >
       <span
-        className={cx("size-1.5 rounded-full", dot && "live-dot")}
+        className={cx("shrink-0 rounded-full", small ? "size-1" : "size-1.5", dot && "live-dot")}
         style={{ backgroundColor: c }}
       />
       {children}
@@ -321,10 +328,10 @@ export const CONNECTOR_STATUS: Record<ConnectorStatus, { label: string; tone: To
   offline: { label: "Offline", tone: "gray" },
 };
 
-export function ConnectorBadge({ status }: { status: ConnectorStatus }) {
+export function ConnectorBadge({ status, small }: { status: ConnectorStatus; small?: boolean }) {
   const s = CONNECTOR_STATUS[status];
   return (
-    <Badge tone={s.tone} dot={status === "charging"}>
+    <Badge tone={s.tone} dot={status === "charging"} small={small}>
       {s.label}
     </Badge>
   );
@@ -805,7 +812,7 @@ export function MobileRow({
   );
 }
 
-/** Conector em uma linha leve: ponto de status, número, tipo e status em texto. */
+/** Conector numa linha: número e tipo, com a etiqueta de status compacta. */
 export function ConnectorLine({
   number,
   type,
@@ -815,20 +822,12 @@ export function ConnectorLine({
   type: string;
   status: ConnectorStatus;
 }) {
-  const s = CONNECTOR_STATUS[status];
-  const c = TONE_VAR[s.tone];
   return (
-    <div className="flex items-center gap-2 text-[13px] leading-6 whitespace-nowrap">
-      <span className="relative flex size-2 shrink-0">
-        {status === "charging" && (
-          <span className="live-ring absolute inset-0 rounded-full" style={{ background: c }} />
-        )}
-        <span className="relative size-2 rounded-full" style={{ background: c }} />
+    <div className="flex items-center gap-2 leading-6 whitespace-nowrap">
+      <span className="text-faint min-w-[4.5rem] text-[11.5px] tabular">
+        #{number} {type}
       </span>
-      <span className="text-faint tabular">#{number}</span>
-      <span className="text-muted">{type}</span>
-      <span className="text-faint">·</span>
-      <span style={{ color: c }}>{s.label}</span>
+      <ConnectorBadge status={status} small />
     </div>
   );
 }
